@@ -10,11 +10,15 @@ from hashlib import new
 from logging.handlers import BaseRotatingHandler
 import sys
 from tkinter import N
-from turtle import position
+from turtle import pos
 
 from setuptools import sic
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
+
+ROW = 0
+COL = 1
+VALUE = 2
 
 class NumbrixState:
     state_id = 0
@@ -26,9 +30,19 @@ class NumbrixState:
 
     def __lt__(self, other):
         return self.id < other.id
-        
-    # TODO: outros metodos da classe
 
+    def get_blank_positions(self):
+        positions = [(i, j) for i in range(self.board.get_size()) for j in range(self.board.get_size())]
+        
+        return list(filter(lambda position: self.board.is_blank_position(position[ROW], position[COL]),
+                positions))
+
+    def get_value_possibilities(self, row, col):
+        return range(1, (self.board.size)**2 + 1)
+
+    def apply_action(self, action):
+        self.board.put_value(action[ROW], action[COL], action[VALUE])
+        return Board(self.board.get_representation(), self.board.get_size())
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
@@ -37,9 +51,16 @@ class Board:
         self.representation = representation
         self.size = size
 
-    def get_representation(self):
-        return self.representation
-        
+    def __repr__(self) -> str:
+        board_representation = ""
+        for representation_line in self.representation:
+            for element in representation_line:
+                board_representation += f"{element} "
+
+            board_representation += "\n"
+        return board_representation
+            
+
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
@@ -83,30 +104,54 @@ class Board:
                 representation.append(representation_line)
         
         return Board(representation, size)
+    
+    def get_representation(self):
+        return self.representation
 
-    # TODO: outros metodos da classe
+    def get_size(self):
+        return self.size
+
+    def put_value(self, row, col, value):
+        if (not self.is_blank_position(row, col)):
+            return 
+
+        self.representation[col][row] = value
+
+    def is_blank_position(self, row, col):
+        value = self.get_number(row, col)
+        return value == 0
 
 
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        super().__init__(NumbrixState(board.get_representation()))
-
+        super().__init__(NumbrixState(board))
+ 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
-        # TODO
-        pass
+        actions = []
+        for blank_position in state.get_blank_positions():
+            row, col = blank_position
+            for number in state.get_value_possibilities(row, col):
+                actions.append(blank_position + (number,))
+        
+        return actions
 
     def result(self, state: NumbrixState, action):
         """ Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de 
         self.actions(state). """
-        # TODO
-        pass
+        if (action not in self.actions(state)):
+            # TODO : refactor this exception
+            raise Exception
 
-  def goal_test(self, state: NumbrixState):
+        new_board = state.apply_action(action)
+        new_state = NumbrixState(new_board)
+        return new_state
+
+    def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
