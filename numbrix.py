@@ -33,19 +33,19 @@ class NumbrixState:
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
 
-    def __init__(self, state, size) -> None:
-        self.state = state
+    def __init__(self, representation, size) -> None:
+        self.representation = representation
         self.size = size
 
-    def get_state(self):
-        return self.state
+    def get_representation(self):
+        return self.representation
         
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
             return None
 
-        return self.state[col][row]
+        return self.representation[col][row]
     
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
@@ -67,7 +67,7 @@ class Board:
         uma instância da classe Board. """
         
         size = None
-        state = []
+        representation = []
 
         with open(input_file) as file:
             # set board size
@@ -76,13 +76,13 @@ class Board:
             # construct board internal representation
             lines = file.readlines()
             for line in lines:
-                state_line = []
+                representation_line = []
                 for element in line.split("\t"):
-                    state_line.append(int(element))
+                    representation_line.append(int(element))
 
-                state.append(state_line)
+                representation.append(representation_line)
         
-        return Board(state, size)
+        return Board(representation, size)
 
     # TODO: outros metodos da classe
 
@@ -90,7 +90,7 @@ class Board:
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        super().__init__(board.get_state())
+        super().__init__(NumbrixState(board.get_representation()))
 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -106,12 +106,12 @@ class Numbrix(Problem):
         # TODO
         pass
 
-    def goal_test(self, state: NumbrixState):
+  def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
         # TODO
-        pass
+        pass  
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
