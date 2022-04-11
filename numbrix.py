@@ -48,22 +48,12 @@ class Board:
         """ Devolve os valores imediatamente abaixo e acima, 
         respectivamente. """
         
-        if row == 0:
-            return (None, self.get_number(row + 1, col))
-        elif row == self.get_size():
-            return (self.get_number(row - 1, col), None)
-        
-        return (self.get_number(row - 1, col), self.get_number(row + 1, col))
+        return (self.get_number(row + 1, col), self.get_number(row - 1, col))
         
     
     def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente à esquerda e à direita, 
         respectivamente. """
-        
-        if col == 0:
-            return (None, self.get_number(row, col + 1))
-        elif row == self.get_size():
-            return (self.get_number(row, col -1), None)
         
         return (self.get_number(row , col - 1), self.get_number(row , col + 1))
 
@@ -134,18 +124,6 @@ if __name__ == "__main__":
     # Ler o ficheiro de input de sys.argv[1],
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
-
-    print(f"{board.get_number(0, 0)} {board.get_number(0, 1)} {board.get_number(0, 2)}")
-    print(f"{board.get_number(1, 0)} {board.get_number(1, 1)} {board.get_number(1, 2)}")
-    print(f"{board.get_number(2, 0)} {board.get_number(2, 1)} {board.get_number(2, 2)}")
-
-    print(f"{board.adjacent_vertical_numbers(0, 0)} {board.adjacent_vertical_numbers(0, 1)} {board.adjacent_vertical_numbers(0, 2)}")
-    print(f"{board.adjacent_vertical_numbers(1, 0)} {board.adjacent_vertical_numbers(1, 1)} {board.adjacent_vertical_numbers(1, 2)}")
-    print(f"{board.adjacent_vertical_numbers(2, 0)} {board.adjacent_vertical_numbers(2, 1)} {board.adjacent_vertical_numbers(2, 2)}")
-
-    print(f"{board.adjacent_horizontal_numbers(0, 0)} {board.adjacent_horizontal_numbers(0, 1)} {board.adjacent_horizontal_numbers(0, 2)}")
-    print(f"{board.adjacent_horizontal_numbers(1, 0)} {board.adjacent_horizontal_numbers(1, 1)} {board.adjacent_horizontal_numbers(1, 2)}")
-    print(f"{board.adjacent_horizontal_numbers(2, 0)} {board.adjacent_horizontal_numbers(2, 1)} {board.adjacent_horizontal_numbers(2, 2)}")
 
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
