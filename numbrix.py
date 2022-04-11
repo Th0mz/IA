@@ -2,9 +2,9 @@
 # Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
 # Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
 
-# Grupo 00:
-# 00000 Nome1
-# 00000 Nome2
+# Grupo 67:
+# 95599 Joao Ramalho
+# 95680 Tomas Tavares
 
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
@@ -35,13 +35,27 @@ class Board:
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
         respectivamente. """
-        # TODO
+        
+        if row == 0:
+            return (None, self.get_number(row + 1, col))
+        elif row == self.get_size():
+            return (self.get_number(row - 1, col), None)
+        else:
+            return (self.get_number(row - 1, col), self.get_number(row + 1, col))
+        
         pass
     
     def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente à esquerda e à direita, 
         respectivamente. """
-        # TODO
+        
+        if col == 0:
+            return (None, self.get_number(row, col + 1))
+        elif row == self.get_size():
+            return (self.get_number(row, col -1), None)
+        else:
+            return (self.get_number(row , col - 1), self.get_number(row , col + 1))
+
         pass
     
     @staticmethod    
