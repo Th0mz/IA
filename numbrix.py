@@ -6,7 +6,10 @@
 # 00000 Nome1
 # 00000 Nome2
 
+from hashlib import new
+from logging.handlers import BaseRotatingHandler
 import sys
+from tkinter import N
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 
@@ -26,7 +29,11 @@ class NumbrixState:
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
-    
+
+    def __init__(self, board, size) -> None:
+        self.board = board
+        self.size = size
+        
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         # TODO
@@ -48,8 +55,24 @@ class Board:
     def parse_instance(filename: str):
         """ Lê o ficheiro cujo caminho é passado como argumento e retorna
         uma instância da classe Board. """
-        # TODO
-        pass
+        
+        size = None
+        board = []
+
+        with open(input_file) as file:
+            # set board size
+            size = int(file.readline())
+            
+            # construct board internal representation
+            lines = file.readlines()
+            for line in lines:
+                board_line = []
+                for element in line.split("\t"):
+                    board_line.append(int(element))
+
+                board.append(board_line)
+        
+        return Board(board, size)
 
     # TODO: outros metodos da classe
 
@@ -92,6 +115,9 @@ class Numbrix(Problem):
 if __name__ == "__main__":
     # TODO:
     # Ler o ficheiro de input de sys.argv[1],
+    input_file = sys.argv[1]
+    board = Board.parse_instance(input_file)
+
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
