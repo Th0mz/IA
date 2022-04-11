@@ -33,16 +33,19 @@ class NumbrixState:
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
 
-    def __init__(self, board, size) -> None:
-        self.board = board
+    def __init__(self, state, size) -> None:
+        self.state = state
         self.size = size
+
+    def get_state(self):
+        return self.state
         
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
             return None
 
-        return self.board[col][row]
+        return self.state[col][row]
     
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
@@ -64,7 +67,7 @@ class Board:
         uma instância da classe Board. """
         
         size = None
-        board = []
+        state = []
 
         with open(input_file) as file:
             # set board size
@@ -73,13 +76,13 @@ class Board:
             # construct board internal representation
             lines = file.readlines()
             for line in lines:
-                board_line = []
+                state_line = []
                 for element in line.split("\t"):
-                    board_line.append(int(element))
+                    state_line.append(int(element))
 
-                board.append(board_line)
+                state.append(state_line)
         
-        return Board(board, size)
+        return Board(state, size)
 
     # TODO: outros metodos da classe
 
@@ -87,8 +90,7 @@ class Board:
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        # TODO
-        pass
+        super().__init__(board.get_state())
 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -120,12 +122,16 @@ class Numbrix(Problem):
 
 
 if __name__ == "__main__":
-    # TODO:
     # Ler o ficheiro de input de sys.argv[1],
+    if (len(sys.argv) != 2):
+        print("Invalid command expected : python numbrix.py <input_file_path>")
+        exit()
+
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
 
     # Usar uma técnica de procura para resolver a instância,
+    
     # Retirar a solução a partir do nó resultante,
+
     # Imprimir para o standard output no formato indicado.
-    pass
