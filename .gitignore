@@ -1,2 +1,3 @@
 tests_final_public
+__pycache__/
 *.txt
