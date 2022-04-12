@@ -6,10 +6,8 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
-import sys
-
-from setuptools import sic
-from search import Problem, Node, astar_search, breadth_first_graph_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
+import sys  
+from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 
 ROW = 0
@@ -72,9 +70,10 @@ class Board:
         board_representation = ""
         for representation_line in self.representation:
             for element in representation_line:
-                board_representation += f"{element} "
+                board_representation += f"{element}\t"
 
-            board_representation += "\n"
+            board_representation_size = len(board_representation)
+            board_representation = board_representation[:board_representation_size - 1] + "\n"
         return board_representation
             
 
@@ -272,7 +271,6 @@ if __name__ == "__main__":
 
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
-    print("Initial:\n", board, sep="")
     
     # Usar uma técnica de procura para resolver a instância,
     problem = Numbrix(board)
@@ -281,9 +279,4 @@ if __name__ == "__main__":
     goal_node = astar_search(problem)
 
     # Imprimir para o standard output no formato indicado.
-    print("Is goal? ", end="")
-    if (goal_node == None):
-        print(f"{False}")
-    else:
-        print(f"{problem.goal_test(goal_node.state)}")
-        print("Solution:\n", goal_node.state.board, sep="")
+    print(goal_node.state.board, sep="")
