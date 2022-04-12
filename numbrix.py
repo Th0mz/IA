@@ -6,13 +6,7 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
-from hashlib import new
-from logging.handlers import BaseRotatingHandler
 import sys
-from tkinter import N
-from turtle import pos
-
-from setuptools import sic
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 
