@@ -8,6 +8,7 @@
 
 from hashlib import new
 from logging.handlers import BaseRotatingHandler
+import re
 import sys
 from tkinter import N
 from turtle import pos
@@ -50,7 +51,7 @@ class NumbrixState:
                 positions))
 
     def get_value_possibilities(self, row, col):
-        return range(1, (self.board.size)**2 + 1)
+        return self.board.get_possible_values(row, col)
 
     def apply_action(self, action):
         row, col, value = action
@@ -102,15 +103,26 @@ class Board:
         
         return (self.get_number(row , col - 1), self.get_number(row , col + 1))
     
-    def check_adjacencies(self, row, col, relative_value):
+    def get_adjacencies(self, row , col):
         relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
+        adjacencies = []
+        
+        for pos in relative_positions:
+            new_row, new_col = pos[ROW] + row, pos[COL] + col
+
+            if(self.get_number(new_row, new_col) != None):
+                adjacencies.append((new_row, new_col))
+
+        return adjacencies
+
+    def check_adjacencies(self, row, col, relative_value):
+        adjacencies = self.get_adjacencies(row, col)
         value = self.get_number(row,col) + relative_value
 
-        for pos in relative_positions:
-            new_row, new_col = pos[0] + row, pos[1] + col
+        for adjacency in adjacencies:
 
-            if(self.get_number(new_row, new_col) == value):
-                return (new_row, new_col)
+            if(self.get_number(adjacency[ROW], adjacency[COL]) == value):
+                return adjacency
         
         return None
 
@@ -148,6 +160,25 @@ class Board:
         value = self.get_number(row, col)
         return value == 0
 
+    def get_possible_values(self, row, col):
+        adjacencies = self.get_adjacencies(row, col)
+        possible_values = []
+
+        for adjency in adjacencies:
+            if (not self.is_blank_position(adjency[ROW], adjency[COL])):
+                value = self.get_number(adjency[ROW], adjency[COL])
+                if (value + 1 <= self.size**2):
+                    possible_values.append(value + 1)
+
+                if (value - 1 >= 1):
+                    possible_values.append(value - 1)
+        
+        # all adjacencies are blank 
+        if len(possible_values) == 0:
+            return range(1, self.size ** 2)
+        
+        return possible_values
+
 
 class Numbrix(Problem):
     def __init__(self, board: Board):
@@ -171,6 +202,7 @@ class Numbrix(Problem):
         das presentes na lista obtida pela execução de 
         self.actions(state). """
         
+        print(len(self.actions(state)))
         if (action not in self.actions(state)):
             # TODO : refactor this exception
             raise Exception
@@ -232,8 +264,9 @@ class Numbrix(Problem):
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
-        # TODO
-        pass
+        # minimum remaining values heuristic
+        
+        
     
     # TODO: outros metodos da classe
 
@@ -255,5 +288,9 @@ if __name__ == "__main__":
     goal_node = breadth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
-    print("Is goal?", problem.goal_test(goal_node.state))
-    print("Solution:\n", goal_node.state.board, sep="")
+    print("Is goal? ", end="")
+    if (goal_node == None):
+        print(f"{False}")
+    else:
+        print(f"{problem.goal_test(goal_node.state)}")
+        print("Solution:\n", goal_node.state.board, sep="")
