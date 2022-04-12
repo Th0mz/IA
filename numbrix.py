@@ -20,6 +20,18 @@ ROW = 0
 COL = 1
 VALUE = 2
 
+def boardCopy (board):
+    new_board = []
+    for row in board:
+        new_row = []
+        for element in row:
+            new_row.append(element)
+        
+        new_board.append(new_row)
+
+    return new_board
+
+
 class NumbrixState:
     state_id = 0
 
@@ -41,8 +53,14 @@ class NumbrixState:
         return range(1, (self.board.size)**2 + 1)
 
     def apply_action(self, action):
-        self.board.put_value(action[ROW], action[COL], action[VALUE])
-        return Board(self.board.get_representation(), self.board.get_size())
+        row, col, value = action
+        board = boardCopy(self.board.get_representation())
+
+        if (not self.board.is_blank_position(row, col)):
+            return None
+
+        board[col][row] = value
+        return Board(board, self.board.get_size())
 
     def get_board(self):
         return self.board
@@ -126,12 +144,6 @@ class Board:
     def get_size(self):
         return self.size
 
-    def put_value(self, row, col, value):
-        if (not self.is_blank_position(row, col)):
-            return 
-
-        self.representation[col][row] = value
-
     def is_blank_position(self, row, col):
         value = self.get_number(row, col)
         return value == 0
@@ -158,6 +170,7 @@ class Numbrix(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de 
         self.actions(state). """
+        
         if (action not in self.actions(state)):
             # TODO : refactor this exception
             raise Exception
@@ -233,11 +246,14 @@ if __name__ == "__main__":
 
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
+    print("Initial:\n", board, sep="")
     
-    numbrix = Numbrix(board)
-    print(numbrix.goal_test(numbrix.initial))
     # Usar uma técnica de procura para resolver a instância,
-    
+    problem = Numbrix(board)
+
     # Retirar a solução a partir do nó resultante,
+    goal_node = breadth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
+    print("Is goal?", problem.goal_test(goal_node.state))
+    print("Solution:\n", goal_node.state.board, sep="")
