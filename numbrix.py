@@ -70,9 +70,10 @@ class Board:
         board_representation = ""
         for representation_line in self.representation:
             for element in representation_line:
-                board_representation += f"{element} "
+                board_representation += f"{element}\t"
 
-            board_representation += "\n"
+            board_representation_size = len(board_representation)
+            board_representation = board_representation[:board_representation_size - 1] + "\n"
         return board_representation
             
 
