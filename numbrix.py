@@ -196,7 +196,6 @@ class Numbrix(Problem):
         das presentes na lista obtida pela execução de 
         self.actions(state). """
         
-        print(len(self.actions(state)))
         if (action not in self.actions(state)):
             # TODO : refactor this exception
             raise Exception
@@ -279,4 +278,4 @@ if __name__ == "__main__":
     goal_node = astar_search(problem)
 
     # Imprimir para o standard output no formato indicado.
-    print(goal_node.state.board, sep="")
+    print(goal_node.state.board, end="")
