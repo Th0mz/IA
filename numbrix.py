@@ -44,6 +44,9 @@ class NumbrixState:
         self.board.put_value(action[ROW], action[COL], action[VALUE])
         return Board(self.board.get_representation(), self.board.get_size())
 
+    def get_board(self):
+        return self.board
+
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
 
@@ -81,7 +84,7 @@ class Board:
         
         return (self.get_number(row , col - 1), self.get_number(row , col + 1))
     
-    def check_adjancies(self, row, col, relative_value):
+    def check_adjacencies(self, row, col, relative_value):
         relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
         value = self.get_number(row,col) + relative_value
 
@@ -170,47 +173,47 @@ class Numbrix(Problem):
         
         #predecessor
         #sucesor
-        if(self.get_board().get_number(0, 0) == 1):
-            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+        if(state.get_board().get_number(0, 0) == 1):
+            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
             
-            if sucessor_coord == None:
+            if successor_coord == None:
                 return False
             
-            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
             predecessor = 1
-        elif(self.get_board().get_number(0,0) == self.get_board().get_size()):
-            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
+        elif(state.get_board().get_number(0,0) == state.get_board().get_size()**2):
+            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
             
             if predecessor_coord == None:
                 return False
             
-            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
-            sucessor = self.get_board().get_size()
+            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
+            successor = state.get_board().get_size()**2
         else:
-            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
-            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
+            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
 
-            if (predecessor_coord == None or sucessor_coord == None):
+            if (predecessor_coord == None or successor_coord == None):
                 return False
 
-            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
-            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
+            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
         
-        while predecessor != 1:
-            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
+        while predecessor > 1:
+            predecessor_coord = state.get_board().check_adjacencies(predecessor_coord[ROW], predecessor_coord[COL], -1)
 
             if(predecessor_coord == None):
                 return False
             
-            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
+            predecessor = state.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
 
-        while sucessor != self.get_board().get_size():
-            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+        while successor < (state.get_board().get_size()**2):
+            successor_coord = state.get_board().check_adjacencies(successor_coord[ROW], successor_coord[COL], 1)
 
-            if(sucessor == None):
+            if(successor_coord == None):
                 return False
             
-            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+            successor = state.get_board().get_number(successor_coord[0], successor_coord[1])
 
         return True
 
@@ -230,7 +233,9 @@ if __name__ == "__main__":
 
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
-
+    
+    numbrix = Numbrix(board)
+    print(numbrix.goal_test(numbrix.initial))
     # Usar uma técnica de procura para resolver a instância,
     
     # Retirar a solução a partir do nó resultante,
