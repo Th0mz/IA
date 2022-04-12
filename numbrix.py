@@ -6,15 +6,10 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
-from hashlib import new
-from logging.handlers import BaseRotatingHandler
-import re
 import sys
-from tkinter import N
-from turtle import pos
 
 from setuptools import sic
-from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
+from search import Problem, Node, astar_search, breadth_first_graph_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 
 ROW = 0
@@ -265,10 +260,8 @@ class Numbrix(Problem):
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         # minimum remaining values heuristic
-        
-        
-    
-    # TODO: outros metodos da classe
+        state = node.state
+        return len(self.actions(state))
 
 
 if __name__ == "__main__":
@@ -285,7 +278,7 @@ if __name__ == "__main__":
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = breadth_first_tree_search(problem)
+    goal_node = astar_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     print("Is goal? ", end="")
