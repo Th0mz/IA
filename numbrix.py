@@ -80,6 +80,18 @@ class Board:
         respectivamente. """
         
         return (self.get_number(row , col - 1), self.get_number(row , col + 1))
+    
+    def check_adjancies(self, row, col, relative_value):
+        relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
+        value = self.get_number(row,col) + relative_value
+
+        for pos in relative_positions:
+            new_row, new_col = pos[0] + row, pos[1] + col
+
+            if(self.get_number(new_row, new_col) == value):
+                return (new_row, new_col)
+        
+        return None
 
     
     @staticmethod    
@@ -155,8 +167,52 @@ class Numbrix(Problem):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
-        # TODO
-        pass  
+        
+        #predecessor
+        #sucesor
+        if(self.get_board().get_number(0, 0) == 1):
+            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+            
+            if sucessor_coord == None:
+                return False
+            
+            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+            predecessor = 1
+        elif(self.get_board().get_number(0,0) == self.get_board().get_size()):
+            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
+            
+            if predecessor_coord == None:
+                return False
+            
+            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
+            sucessor = self.get_board().get_size()
+        else:
+            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
+            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+
+            if (predecessor_coord == None or sucessor_coord == None):
+                return False
+
+            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
+            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+        
+        while predecessor != 1:
+            predecessor_coord = self.get_board().check_adjancies(0, 0, -1)
+
+            if(predecessor_coord == None):
+                return False
+            
+            predecessor = self.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
+
+        while sucessor != self.get_board().get_size():
+            sucessor_coord = self.get_board().check_adjancies(0, 0, 1)
+
+            if(sucessor == None):
+                return False
+            
+            sucessor = self.get_board().get_number(sucessor_coord[0], sucessor_coord[1])
+
+        return True
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
