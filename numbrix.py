@@ -13,17 +13,6 @@ ROW = 0
 COL = 1
 VALUE = 2
 
-def boardCopy (board):
-    new_board = []
-    for row in board:
-        new_row = []
-        for element in row:
-            new_row.append(element)
-        
-        new_board.append(new_row)
-
-    return new_board
-
 def arrayCopy (array):
     new_array = []
     for value in array:
@@ -55,13 +44,13 @@ class NumbrixState:
 
     def apply_action(self, action):
         row, col, value = action
-        board = boardCopy(self.board.get_representation())
+        board = arrayCopy(self.board.get_representation())
         available_values = arrayCopy(self.board.get_available_values())
 
         if (not self.board.is_blank_position(row, col)):
             return None
 
-        board[col][row] = value
+        board[row * self.board.size + col] = value
         available_values[value - 1] = False
 
         return Board(board, self.board.get_size(), available_values)
@@ -77,8 +66,8 @@ class NumbrixState:
         return blank_positions
 
     def classify_value (self, row, col, value):
-        board = boardCopy(self.board.get_representation())
-        board[row][col] = value
+        board = arrayCopy(self.board.get_representation())
+        board[row * self.board.size + col] = value
 
         sequence_paths = 18
         for i in range(-1, 2):
@@ -139,8 +128,9 @@ class Board:
 
     def __repr__(self) -> str:
         board_representation = ""
-        for representation_line in self.representation:
-            for element in representation_line:
+        for row in range(self.size):
+            for col in range(self.size):
+                element = self.get_number(row, col)
                 board_representation += f"{element}\t"
 
             board_representation_size = len(board_representation)
@@ -153,7 +143,7 @@ class Board:
         if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
             return None
 
-        return self.representation[col][row]
+        return self.representation[row * self.size + col]
     
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
@@ -210,16 +200,13 @@ class Board:
             # construct board internal representation
             lines = file.readlines()
             for line in lines:
-                representation_line = []
                 for element in line.split("\t"):
                     element = int(element)
-                    representation_line.append(element)
+                    representation.append(element)
 
                     # check if the element is a blank space
                     if element != 0:
                         available_values[element - 1] = False
-
-                representation.append(representation_line)
         
         return Board(representation, size, available_values)
     
