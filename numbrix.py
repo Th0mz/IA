@@ -46,6 +46,7 @@ class NumbrixState:
         row, col, value = action
         board = arrayCopy(self.board.get_representation())
         available_values = arrayCopy(self.board.get_available_values())
+        number_sequences = arrayCopy(self.board.get_number_sequences())
 
         if (not self.board.is_blank_position(row, col)):
             return None
@@ -53,64 +54,29 @@ class NumbrixState:
         board[row * self.board.size + col] = value
         available_values[value - 1] = False
 
-        return Board(board, self.board.get_size(), available_values)
+        # check if the added value is in a sequence that already exists
+        for i in range(len(number_sequences)):
+            sequence_start = number_sequences[i][0]
+            if (self.is_adjency((row, col), sequence_start) and True):
+                number_sequences[i] = [(row, col)] + number_sequences[i]
+                # TODO
+                return Board(board, self.board.get_size(), available_values, number_sequences)
 
-    def classify_position (self, row, col):
-        blank_positions = 0
-        positions = [(row + i, col + j) for i in range(-2, 3) for j in range(-2, 3)]
-        for position in positions:
-            if (abs(position[ROW] - row) + abs(position[COL] - col) <= 2):
-                if (self.board.is_blank_position(position[ROW], position[COL])):
-                    blank_positions += 1
+            sequence_end = number_sequences[i][-1]
+            if (self.is_adjency((row, col), sequence_end) and True):
+                number_sequences[i] = number_sequences[i] + [(row, col)]
+                # TODO
+                return Board(board, self.board.get_size(), available_values, number_sequences)
 
-        return blank_positions
 
-    def classify_value (self, row, col, value):
-        board = arrayCopy(self.board.get_representation())
-        board[row * self.board.size + col] = value
+        # check if it forms a new sequence
 
-        sequence_paths = 18
-        for i in range(-1, 2):
-            vertical_adjacencies = self.board.adjacent_vertical_numbers(row + i, col)
-            compare_value = self.board.get_number(row + i, col) 
-            if ((vertical_adjacencies[0] != None and vertical_adjacencies[1] != None and compare_value != None) 
-                and (vertical_adjacencies[0] != 0 and vertical_adjacencies[1] != 0 and compare_value != 0)):
-                
-                if (abs(compare_value - vertical_adjacencies[0]) == 1 and abs(compare_value - vertical_adjacencies[1]) == 1 and abs(vertical_adjacencies[0] - vertical_adjacencies[1]) == 2):
-                    sequence_paths -= 1
+        # create that sequence
 
-            horizontal_adjacencies = self.board.adjacent_horizontal_numbers(row, col + i)
-            compare_value = self.board.get_number(row + i, col) 
-            if ((horizontal_adjacencies[0] != None and horizontal_adjacencies[1] != None and compare_value != None) 
-                and (horizontal_adjacencies[0] != 0 and horizontal_adjacencies[1] != 0 and compare_value != 0)):
-                
-                if (abs(compare_value - horizontal_adjacencies[0]) == 1 and abs(compare_value - horizontal_adjacencies[1]) == 1 and abs(horizontal_adjacencies[0] - horizontal_adjacencies[1]) == 2):
-                    sequence_paths -= 1
+        return Board(board, self.board.get_size(), available_values, number_sequences)      
 
-        for i in [-1, 1]:
-            for j in [-1, 1]:
-                value_i = self.board.get_number(row + i, col)
-                value_j = self.board.get_number(row, col + j)
-                if ((value_i and value_j) and abs(value_i - value_j) == 2 and abs(value_i - value) == 1 and abs(value_j - value) == 1):
-                    sequence_paths -= 1
-        
-        for i in [-1, 1]:
-            for j in [-1, 1]:
-                value_i = self.board.get_number(row + i, col)
-                value_j = self.board.get_number(row + i, col + j)
-                if ((value_i and value_j) and abs(value_i - value_j) == 1 and abs(value_i - value) == 1 and abs(value_j - value) == 2):
-                    sequence_paths -= 1
-
-        for i in [-1, 1]:
-            for j in [-1, 1]:
-                value_i = self.board.get_number(row, col + j)
-                value_j = self.board.get_number(row + i, col + j)
-                if ((value_i and value_j) and abs(value_i - value_j) == 1 and abs(value_i - value) == 1 and abs(value_j - value) == 2):
-                    sequence_paths -= 1
-    
-        return sequence_paths
-
-        
+    def is_adjency (x, y):
+        return abs(x[ROW] - y[ROW]) + abs(x[COL] + y[COL]) == 1 
 
     def get_board(self):
         return self.board
@@ -121,10 +87,11 @@ class NumbrixState:
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
 
-    def __init__(self, representation, size, available_values) -> None:
+    def __init__(self, representation, size, available_values, number_sequences) -> None:
         self.representation = representation
         self.size = size
         self.available_values = available_values
+        self.number_sequences = number_sequences
 
     def __repr__(self) -> str:
         board_representation = ""
@@ -190,6 +157,7 @@ class Board:
         size = None
         representation = []
         available_values = []
+        number_sequences = []
 
         with open(filename) as file:
             # set board size
@@ -207,11 +175,16 @@ class Board:
                     # check if the element is a blank space
                     if element != 0:
                         available_values[element - 1] = False
+
+            # fill number sequences
         
-        return Board(representation, size, available_values)
+        return Board(representation, size, available_values, number_sequences)
     
     def get_representation(self):
         return self.representation
+
+    def get_number_sequences(self):
+        return self.number_sequences
 
     def get_size(self):
         return self.size
@@ -342,15 +315,17 @@ class Numbrix(Problem):
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
-        # minimum remaining values heuristic
+        
         state = node.state
-        action = state.get_last_action()
+        sequences = state.get_board().get_number_sequences()
+        biggest_sequence = 0
+        for sequence in sequences:
+            sequence_len = len(sequence)
+            if sequence_len > biggest_sequence:
+                biggest_sequence = sequence_len
 
-        if (action == None):
-            return 100
-
-        row, col, value = action
-        return state.classify_position(row, col) + state.classify_value(row, col, value) + len(state.get_blank_positions()) * 10
+        num_cells = state.get_board().get_size() ** 2
+        return num_cells - biggest_sequence
 
 def main():
     # Ler o ficheiro de input de sys.argv[1],
