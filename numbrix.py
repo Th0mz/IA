@@ -6,7 +6,9 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
-import sys  
+import sys
+
+from numpy import number  
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 ROW = 0
@@ -19,6 +21,15 @@ def arrayCopy (array):
         new_array.append(value)
 
     return new_array
+
+def sequencesCopy (sequences):
+    new_sequences = []
+    for sequence in sequences:
+        new_sequence = []
+        for position in sequence:
+            new_sequence.append(position)
+        new_sequences.append(new_sequence)
+    return new_sequences
 
 
 class NumbrixState:
@@ -73,10 +84,51 @@ class NumbrixState:
 
         # create that sequence
 
-        return Board(board, self.board.get_size(), available_values, number_sequences)      
+        return Board(board, self.board.get_size(), available_values, number_sequences)
 
-    def is_adjency (x, y):
-        return abs(x[ROW] - y[ROW]) + abs(x[COL] + y[COL]) == 1 
+    def merge_sequences(self, board, size, number_sequences):      
+        def is_adjency (x, y):
+            return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
+
+        def is_successor (board, size, x, y):
+            row_x, col_x = x
+            row_y, col_y = y
+            return abs(board_value(board, size, row_x, col_x) - board_value(board, size, row_y, col_y)) == 1
+
+        def board_value(board, size, row, col):
+            return board[row * size + col]
+
+        i, j = (0, 0) 
+        while i < len(number_sequences):
+            while j < len(number_sequences):
+                if (i != j):
+                    sequence_i = number_sequences[i]
+                    sequence_j = number_sequences[j]
+
+                    # check if can merge fist element 
+                    # of i with last element of j
+                    if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(board, size, sequence_i[0], sequence_j[-1])):
+                        new_sequence = sequence_j + sequence_i
+                        number_sequences.pop(i)
+                        number_sequences.pop(j)
+                        number_sequences.append(new_sequence)
+                        i, j = (0, 0)
+                        break
+                    
+                    # check if can merge fist element 
+                    # of j with last element of i
+                    if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(board, size, sequence_j[0], sequence_i[-1])):
+                        new_sequence = sequence_i + sequence_j
+                        number_sequences.pop(i)
+                        number_sequences.pop(j)
+                        number_sequences.append(new_sequence)´
+                        i, j = (0, 0)
+                        break
+
+                j += 1
+            i += 1
+
+        return number_sequences 
 
     def get_board(self):
         return self.board
@@ -176,9 +228,13 @@ class Board:
                     if element != 0:
                         available_values[element - 1] = False
 
-            # fill number sequences
-        
-        return Board(representation, size, available_values, number_sequences)
+        # fill number sequences
+        board = Board(representation, size, available_values, number_sequences)
+
+        #aqui
+
+        board.set_number_sequeces(number_sequences)
+        return board
     
     def get_representation(self):
         return self.representation
