@@ -176,9 +176,22 @@ class Board:
                     if element != 0:
                         available_values[element - 1] = False
 
-            # fill number sequences
+        # fill number sequences
+        number_sequences = []
+        board = Board(representation, size, available_values, number_sequences)
+        size = board.get_size()
+        i = 0
+        j = 0
+
+        for i in range(size):
+            for j in range(size):
+                coords = (i, j)
+                number_sequences.append([coords])
+
+        #meter funcao tommy
         
-        return Board(representation, size, available_values, number_sequences)
+        #setter para dar set da number_sequence
+        return board
     
     def get_representation(self):
         return self.representation
