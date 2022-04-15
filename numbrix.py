@@ -6,6 +6,7 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
+from multiprocessing.sharedctypes import Value
 import sys
 
 from numpy import number  
@@ -65,70 +66,10 @@ class NumbrixState:
         board[row * self.board.size + col] = value
         available_values[value - 1] = False
 
-        # check if the added value is in a sequence that already exists
-        for i in range(len(number_sequences)):
-            sequence_start = number_sequences[i][0]
-            if (self.is_adjency((row, col), sequence_start) and True):
-                number_sequences[i] = [(row, col)] + number_sequences[i]
-                # TODO
-                return Board(board, self.board.get_size(), available_values, number_sequences)
+        board = Board(board, self.board.get_size(), available_values, number_sequences)
+        board.merge_sequences()
 
-            sequence_end = number_sequences[i][-1]
-            if (self.is_adjency((row, col), sequence_end) and True):
-                number_sequences[i] = number_sequences[i] + [(row, col)]
-                # TODO
-                return Board(board, self.board.get_size(), available_values, number_sequences)
-
-
-        # check if it forms a new sequence
-
-        # create that sequence
-
-        return Board(board, self.board.get_size(), available_values, number_sequences)
-
-    def merge_sequences(self, board, size, number_sequences):      
-        def is_adjency (x, y):
-            return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
-
-        def is_successor (board, size, x, y):
-            row_x, col_x = x
-            row_y, col_y = y
-            return abs(board_value(board, size, row_x, col_x) - board_value(board, size, row_y, col_y)) == 1
-
-        def board_value(board, size, row, col):
-            return board[row * size + col]
-
-        i, j = (0, 0) 
-        while i < len(number_sequences):
-            while j < len(number_sequences):
-                if (i != j):
-                    sequence_i = number_sequences[i]
-                    sequence_j = number_sequences[j]
-
-                    # check if can merge fist element 
-                    # of i with last element of j
-                    if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(board, size, sequence_i[0], sequence_j[-1])):
-                        new_sequence = sequence_j + sequence_i
-                        number_sequences.pop(i)
-                        number_sequences.pop(j)
-                        number_sequences.append(new_sequence)
-                        i, j = (0, 0)
-                        break
-                    
-                    # check if can merge fist element 
-                    # of j with last element of i
-                    if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(board, size, sequence_j[0], sequence_i[-1])):
-                        new_sequence = sequence_i + sequence_j
-                        number_sequences.pop(i)
-                        number_sequences.pop(j)
-                        number_sequences.append(new_sequence)´
-                        i, j = (0, 0)
-                        break
-
-                j += 1
-            i += 1
-
-        return number_sequences 
+        return board 
 
     def get_board(self):
         return self.board
@@ -229,11 +170,23 @@ class Board:
                         available_values[element - 1] = False
 
         # fill number sequences
+        number_sequences = []
         board = Board(representation, size, available_values, number_sequences)
+        size = board.get_size()
+        i = 0
+        j = 0
 
-        #aqui
+        for i in range(size):
+            for j in range(size):
+                coords = (i, j)
+                number_sequences.append([coords])
 
-        board.set_number_sequeces(number_sequences)
+        print(board.number_sequences)
+        board.merge_sequences()
+        print(board.number_sequences)
+        exit()
+        
+        #setter para dar set da number_sequence
         return board
     
     def get_representation(self):
@@ -286,6 +239,53 @@ class Board:
             return False
 
         return self.available_values[value - 1]
+
+    def merge_sequences(self):      
+        def is_adjency (x, y):
+            return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
+
+        def is_successor (x, y):
+            row_x, col_x = x
+            row_y, col_y = y 
+            
+            value_x = self.get_number(row_x, col_x) 
+            value_y = self.get_number(row_y, col_y)
+
+            return abs(value_x - value_y) == 1
+
+        i, j = (0, 0) 
+        while i < len(self.number_sequences):
+            while j < len(self.number_sequences):
+                if (i != j):
+                    sequence_i = self.number_sequences[i]
+                    sequence_j = self.number_sequences[j]
+
+                    # check if can merge fist element 
+                    # of i with last element of j
+                    if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(sequence_i[0], sequence_j[-1])):
+                        new_sequence = sequence_j + sequence_i
+                        max_index = max(i, j)
+                        min_index = min(i, j)
+                        self.number_sequences.pop(max_index)
+                        self.number_sequences.pop(min_index)
+                        self.number_sequences.append(new_sequence)
+                        i, j = (0, 0)
+                        break
+                    
+                    # check if can merge fist element 
+                    # of j with last element of i
+                    if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(sequence_j[0], sequence_i[-1])):
+                        new_sequence = sequence_i + sequence_j
+                        max_index = max(i, j)
+                        min_index = min(i, j)
+                        self.number_sequences.pop(max_index)
+                        self.number_sequences.pop(min_index)
+                        self.number_sequences.append(new_sequence)
+                        i, j = (0, 0)
+                        break
+
+                j += 1
+            i += 1
 
 
 class Numbrix(Problem):
