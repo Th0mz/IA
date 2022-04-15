@@ -184,7 +184,6 @@ class Board:
         print(board.number_sequences)
         board.merge_sequences()
         print(board.number_sequences)
-        exit()
         
         #setter para dar set da number_sequence
         return board
@@ -247,45 +246,50 @@ class Board:
         def is_successor (x, y):
             row_x, col_x = x
             row_y, col_y = y 
-            
+
             value_x = self.get_number(row_x, col_x) 
             value_y = self.get_number(row_y, col_y)
 
-            return abs(value_x - value_y) == 1
+            return value_x != 0 and value_y != 0 and abs(value_x - value_y) == 1
 
-        i, j = (0, 0) 
-        while i < len(self.number_sequences):
-            while j < len(self.number_sequences):
-                if (i != j):
-                    sequence_i = self.number_sequences[i]
-                    sequence_j = self.number_sequences[j]
+        def merge_sequence():
+            i, j = (0, 0)
+            while (i < len(self.number_sequences)):
+                for j in range(len(self.number_sequences)):
+                    if (i != j):
+                        sequence_i = self.number_sequences[i]
+                        sequence_j = self.number_sequences[j]
 
-                    # check if can merge fist element 
-                    # of i with last element of j
-                    if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(sequence_i[0], sequence_j[-1])):
-                        new_sequence = sequence_j + sequence_i
-                        max_index = max(i, j)
-                        min_index = min(i, j)
-                        self.number_sequences.pop(max_index)
-                        self.number_sequences.pop(min_index)
-                        self.number_sequences.append(new_sequence)
-                        i, j = (0, 0)
-                        break
-                    
-                    # check if can merge fist element 
-                    # of j with last element of i
-                    if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(sequence_j[0], sequence_i[-1])):
-                        new_sequence = sequence_i + sequence_j
-                        max_index = max(i, j)
-                        min_index = min(i, j)
-                        self.number_sequences.pop(max_index)
-                        self.number_sequences.pop(min_index)
-                        self.number_sequences.append(new_sequence)
-                        i, j = (0, 0)
-                        break
+                        # check if can merge fist element 
+                        # of i with last element of j
+                        if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(sequence_i[0], sequence_j[-1])):
+                            new_sequence = sequence_i + sequence_j 
+                            max_index = max(i, j)
+                            min_index = min(i, j)
+                            self.number_sequences.pop(max_index)
+                            self.number_sequences.pop(min_index)
+                            self.number_sequences.append(new_sequence)
+                            return True
+                        
+                        # check if can merge fist element 
+                        # of j with last element of i
+                        if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(sequence_j[0], sequence_i[-1])):
+                            new_sequence = sequence_j + sequence_i
+                            max_index = max(i, j)
+                            min_index = min(i, j)
+                            self.number_sequences.pop(max_index)
+                            self.number_sequences.pop(min_index)
+                            self.number_sequences.append(new_sequence)
+                            return True
+                i += 1
+            
+            return False
+        
+        while merge_sequence():
+            pass
 
-                j += 1
-            i += 1
+
+
 
 
 class Numbrix(Problem):
