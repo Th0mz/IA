@@ -6,11 +6,16 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
+from decimal import MIN_EMIN
 from multiprocessing.sharedctypes import Value
 import sys
+from tkinter import N
+from tkinter.messagebox import NO
 
-from numpy import number  
+from numpy import number
+from pkg_resources import yield_lines  
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
+from utils import sequence
 
 ROW = 0
 COL = 1
@@ -59,6 +64,7 @@ class NumbrixState:
         board = arrayCopy(self.board.get_representation())
         available_values = arrayCopy(self.board.get_available_values())
         number_sequences = arrayCopy(self.board.get_number_sequences())
+        sequences_sizes = arrayCopy(self.board.get_sequences_sizes())
 
         if (not self.board.is_blank_position(row, col)):
             return None
@@ -66,8 +72,8 @@ class NumbrixState:
         board[row * self.board.size + col] = value
         available_values[value - 1] = False
 
-        board = Board(board, self.board.get_size(), available_values, number_sequences)
-        board.merge_sequences()
+        board = Board(board, self.board.get_size(), available_values, number_sequences, sequences_sizes)
+        board.merge_sequences_action(action)
 
         return board 
 
@@ -80,11 +86,12 @@ class NumbrixState:
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
 
-    def __init__(self, representation, size, available_values, number_sequences) -> None:
+    def __init__(self, representation, size, available_values, number_sequences, sequences_sizes) -> None:
         self.representation = representation
         self.size = size
         self.available_values = available_values
         self.number_sequences = number_sequences
+        self.sequences_sizes = sequences_sizes
 
     def __repr__(self) -> str:
         board_representation = ""
@@ -170,20 +177,11 @@ class Board:
                         available_values[element - 1] = False
 
         # fill number sequences
-        number_sequences = []
-        board = Board(representation, size, available_values, number_sequences)
-        size = board.get_size()
-        i = 0
-        j = 0
+        number_sequences = [[(row, col)] for row in range(size) for col in range(size)]
+        sequences_sizes = [1 for i in range(size ** 2)]
+        board = Board(representation, size, available_values, number_sequences, sequences_sizes)
 
-        for i in range(size):
-            for j in range(size):
-                coords = (i, j)
-                number_sequences.append([coords])
-
-        print(board.number_sequences)
-        board.merge_sequences()
-        print(board.number_sequences)
+        board.calculate_paths()
         
         #setter para dar set da number_sequence
         return board
@@ -193,6 +191,9 @@ class Board:
 
     def get_number_sequences(self):
         return self.number_sequences
+
+    def get_sequences_sizes(self):
+        return self.sequences_sizes
 
     def get_size(self):
         return self.size
@@ -239,18 +240,86 @@ class Board:
 
         return self.available_values[value - 1]
 
-    def merge_sequences(self):      
-        def is_adjency (x, y):
-            return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
+    def is_adjency (self, x, y):
+        return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
 
-        def is_successor (x, y):
+    def is_successor (self, x, y):    
             row_x, col_x = x
             row_y, col_y = y 
 
-            value_x = self.get_number(row_x, col_x) 
+            value_x = self.get_number(row_x, col_x)
             value_y = self.get_number(row_y, col_y)
 
             return value_x != 0 and value_y != 0 and abs(value_x - value_y) == 1
+
+
+    def merge_sequences_action(self, action):
+        def get_sequence(position):
+            row, col = position
+            for i in range(len(self.number_sequences)):
+                if (row, col) == self.number_sequences[i][0]:
+                    return (0, i)
+
+                if (row, col) == self.number_sequences[i][-1]:
+                    return (-1, i)
+
+            return None
+        
+        row, col, value = action
+        position, index = get_sequence((row, col))
+        
+        adjacencies = self.get_adjacencies(row, col)
+        for adjency in adjacencies:
+            if (self.is_successor((row, col), adjency)):
+                adj_sequence_info = get_sequence(adjency)
+                if (adj_sequence_info != None):
+                    adj_position, adj_index = adj_sequence_info
+                    self.merge_sequences(index, adj_index, position, adj_position)
+
+                    sequence_info = get_sequence((row, col))
+                    if (sequence_info == None):
+                        return
+
+                    position, index = sequence_info
+
+
+    def merge_sequences(self, index_i, index_j, position_i, position_j):
+        sequence_i = self.number_sequences[index_i]
+        sequence_j = self.number_sequences[index_j]
+
+        # TODO : bug input1
+        #   ==================
+        #   1       6       0
+        #   0       5       4
+        #   0       0       9
+        #   ==================
+        #  [[(0, 0)], [(0, 2)], [(1, 0)], [(2, 0)], [(2, 1)], [(2, 2)], [(1, 1), 0]]
+
+        if (position_i == position_j):
+            if (len(sequence_i) == 1 and len(sequence_j) == 1):
+                if (self.get_number(sequence_i[0][ROW], sequence_i[0][COL]) < self.get_number(sequence_j[0][ROW], sequence_j[0][COL])):
+                    position_j = -1
+                else:
+                    position_i = -1
+            elif (len(sequence_i) == 1):
+                position_j == -1
+            elif (len(sequence_j) == 1):
+                position_i == -1
+
+        new_sequence = [0, 0]
+        new_sequence[position_i] = sequence_i[position_j]
+        new_sequence[position_j] = sequence_j[position_i]
+
+        max_index = max(index_i, index_j)
+        min_index = min(index_i, index_j)
+        self.number_sequences.pop(max_index)
+        self.number_sequences.pop(min_index)
+        self.number_sequences.append(new_sequence)
+
+        new_sequence_size = self.sequences_sizes.pop(max_index) + self.sequences_sizes.pop(min_index)
+        self.sequences_sizes.append(new_sequence_size)
+
+    def calculate_paths(self):      
 
         def merge_sequence():
             i, j = (0, 0)
@@ -262,24 +331,14 @@ class Board:
 
                         # check if can merge fist element 
                         # of i with last element of j
-                        if (is_adjency(sequence_i[0], sequence_j[-1]) and is_successor(sequence_i[0], sequence_j[-1])):
-                            new_sequence = sequence_i + sequence_j 
-                            max_index = max(i, j)
-                            min_index = min(i, j)
-                            self.number_sequences.pop(max_index)
-                            self.number_sequences.pop(min_index)
-                            self.number_sequences.append(new_sequence)
+                        if (self.is_adjency(sequence_i[0], sequence_j[-1]) and self.is_successor(sequence_i[0], sequence_j[-1])):
+                            self.merge_sequences(i, j, 0, -1)
                             return True
                         
                         # check if can merge fist element 
                         # of j with last element of i
-                        if (is_adjency(sequence_j[0], sequence_i[-1]) and is_successor(sequence_j[0], sequence_i[-1])):
-                            new_sequence = sequence_j + sequence_i
-                            max_index = max(i, j)
-                            min_index = min(i, j)
-                            self.number_sequences.pop(max_index)
-                            self.number_sequences.pop(min_index)
-                            self.number_sequences.append(new_sequence)
+                        if (self.is_adjency(sequence_j[0], sequence_i[-1]) and self.is_successor(sequence_j[0], sequence_i[-1])):
+                            self.merge_sequences(i, j, -1, 0)
                             return True
                 i += 1
             
@@ -376,16 +435,12 @@ class Numbrix(Problem):
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         
+        # TODO : dont just consider the biggest sequence but all sequences
         state = node.state
-        sequences = state.get_board().get_number_sequences()
-        biggest_sequence = 0
-        for sequence in sequences:
-            sequence_len = len(sequence)
-            if sequence_len > biggest_sequence:
-                biggest_sequence = sequence_len
+        sequences_sizes = state.get_board().get_sequences_sizes()
 
         num_cells = state.get_board().get_size() ** 2
-        return num_cells - biggest_sequence
+        return num_cells - max(sequences_sizes)
 
 def main():
     # Ler o ficheiro de input de sys.argv[1],
@@ -400,7 +455,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = astar_search(problem)
+    goal_node = greedy_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
@@ -410,16 +465,5 @@ if __name__ == "__main__":
     # DEBUG : 
     import cProfile
     cProfile.run('main()', "output.dat")
-
-    import pstats
-    from pstats import SortKey
-
-    with open('time.txt', 'w') as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("time").print_stats()
-
-    with open('calls.txt', 'w') as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("calls").print_stats()
 
     
