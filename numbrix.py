@@ -287,28 +287,17 @@ class Board:
         sequence_i = self.number_sequences[index_i]
         sequence_j = self.number_sequences[index_j]
 
-        # TODO : bug input1
-        #   ==================
-        #   1       6       0
-        #   0       5       4
-        #   0       0       9
-        #   ==================
-        #  [[(0, 0)], [(0, 2)], [(1, 0)], [(2, 0)], [(2, 1)], [(2, 2)], [(1, 1), 0]]
-
-        if (position_i == position_j):
-            if (len(sequence_i) == 1 and len(sequence_j) == 1):
-                if (self.get_number(sequence_i[0][ROW], sequence_i[0][COL]) < self.get_number(sequence_j[0][ROW], sequence_j[0][COL])):
-                    position_j = -1
-                else:
-                    position_i = -1
-            elif (len(sequence_i) == 1):
-                position_j == -1
-            elif (len(sequence_j) == 1):
-                position_i == -1
+        if (len(sequence_i) == 1 or len(sequence_j) == 1):
+            if (self.get_number(sequence_i[position_i][ROW], sequence_i[position_i][COL]) < self.get_number(sequence_j[position_j][ROW], sequence_j[position_j][COL])):
+                position_i = -1
+                position_j = 0
+            else:
+                position_i = 0
+                position_j = -1
 
         new_sequence = [0, 0]
-        new_sequence[position_i] = sequence_i[position_j]
-        new_sequence[position_j] = sequence_j[position_i]
+        new_sequence[position_i] = sequence_j[position_i]
+        new_sequence[position_j] = sequence_i[position_j]
 
         max_index = max(index_i, index_j)
         min_index = min(index_i, index_j)
