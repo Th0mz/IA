@@ -441,6 +441,9 @@ def main():
     goal_node = astar_search(problem)
 
     # Imprimir para o standard output no formato indicado.
+    if (goal_node == None):
+        raise Exception
+
     print(goal_node.state.board, end="")
 
 
