@@ -6,17 +6,8 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
-from decimal import MIN_EMIN
-from multiprocessing.sharedctypes import Value
-from operator import ne
 import sys
-from tkinter import N
-from tkinter.messagebox import NO
-
-from numpy import number
-from pkg_resources import yield_lines  
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
-from utils import F, sequence
 
 ROW = 0
 COL = 1
