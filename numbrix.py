@@ -8,6 +8,7 @@
 
 from decimal import MIN_EMIN
 from multiprocessing.sharedctypes import Value
+from operator import ne
 import sys
 from tkinter import N
 from tkinter.messagebox import NO
@@ -15,7 +16,7 @@ from tkinter.messagebox import NO
 from numpy import number
 from pkg_resources import yield_lines  
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
-from utils import sequence
+from utils import F, sequence
 
 ROW = 0
 COL = 1
@@ -203,42 +204,39 @@ class Board:
         return value == 0
 
     def get_possible_values(self, row, col):
+        def is_available_value(value):
+            if not (1 <= value <= self.size**2):
+                return False
 
-        # check if the blank square is surrounded by 
-        # 2 consecutive values on the vertical
-        vertical_adjacent = self.adjacent_vertical_numbers(row, col)
-        if ((vertical_adjacent[0] and vertical_adjacent[1]) and (abs(vertical_adjacent[0] - vertical_adjacent[1]) == 2)):
-            value = min(vertical_adjacent[0], vertical_adjacent[1]) + 1
-            if (self.is_available_value(value)):
-                return [value]
-            
-            return []
-        
-        # check if the blank square is surrounded by 
-        # 2 consecutive values on the horizontal
-        horizontal_adjacent = self.adjacent_horizontal_numbers(row, col)
-        if ((horizontal_adjacent[0] and horizontal_adjacent[1]) and (abs(horizontal_adjacent[0] - horizontal_adjacent[1]) == 2)):
-            value = min(horizontal_adjacent[0], horizontal_adjacent[1]) + 1
-            if (self.is_available_value(value)):
-                return [value]
-            
-            return []
+            return self.available_values[value - 1]
+
+        def is_in_sequence_range(row, col, number):
+            radius = self.size ** 2
+            index = None
+            # TODO : se for preciso da para tornar isto mais eficiente
+            # usar lista de sequencias em vez de toda a representação
+            for i in range(len(self.representation)):
+                value = self.representation[i]
+                new_radius = abs(value - number)
+                if (new_radius < radius):
+                    radius = new_radius
+                    index = i
+
+            adj_row = index // self.size
+            adj_col = index % self.size
+
+            return abs(row - adj_row) + abs(col - adj_col) <= radius
+
 
         possible_values = []
         for number in range(1, self.size**2 + 1):
-            if (self.is_available_value(number)):
+            if (is_available_value(number) and is_in_sequence_range(row, col, number)):
                 possible_values.append(number)
 
         return possible_values
 
     def get_available_values(self):
         return self.available_values
-
-    def is_available_value(self, value):
-        if not (1 <= value <= self.size**2):
-            return False
-
-        return self.available_values[value - 1]
 
     def is_adjency (self, x, y):
         return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
@@ -428,8 +426,13 @@ class Numbrix(Problem):
         state = node.state
         sequences_sizes = state.get_board().get_sequences_sizes()
 
-        num_cells = state.get_board().get_size() ** 2
-        return num_cells - max(sequences_sizes)
+        cells_in_sequence = 0
+        for sequence_size in sequences_sizes:
+            if sequence_size > 1:
+                cells_in_sequence += sequence_size
+
+        num_cells = state.get_board().get_size() ** 3
+        return num_cells - cells_in_sequence - max(sequences_sizes)
 
 def main():
     # Ler o ficheiro de input de sys.argv[1],
@@ -444,7 +447,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = greedy_search(problem)
+    goal_node = astar_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
