@@ -211,6 +211,16 @@ class Board:
 
         return self.available_values[value - 1]
 
+    def smallest_radius_successor (self, number):
+        max_radius = max(number - 1,   self.size ** 2 - number)
+        for radius in range(1, max_radius):
+            if (not self.is_available_value(number - radius) and number - radius >= 1):
+                return (radius, number - radius) 
+            elif (not self.is_available_value(number + radius) and number + radius <= self.size**2):
+                return (radius, number + radius)
+                
+        return None
+
     def get_possible_values(self, row, col):
 
         def get_number_position (number):
@@ -221,21 +231,13 @@ class Board:
             return None
 
         def is_in_sequence_range(row, col, number):
-            radius = 1
-            adj_number = None
-            if (not self.is_available_value(number - radius) and number - radius >= 1):
-                 adj_number = number - radius 
-            elif (not self.is_available_value(number + radius) and number + radius <= Board.num_cells):
-                adj_number = number + radius
-            else:
-                return False
-
+            radius, adj_number = self.smallest_radius_successor(number)
             adj_position = get_number_position(adj_number)
             adj_row, adj_col = adj_position
 
             # manhattan distance must be smaller than the difference bettween the
             # 2 adjacent values in order to be able to connect the 2 values
-            return abs(row - adj_row) + abs(col - adj_col) <= radius
+            return abs(row - adj_row) + abs(col - adj_col) <= radius      
 
         possible_values = []
         for number in range(1, Board.num_cells + 1):
@@ -358,6 +360,13 @@ class Numbrix(Problem):
         actions = []
         for blank_position in state.get_blank_positions():
             row, col = blank_position
+            possible_values = state.get_value_possibilities(row, col)
+
+            # if there is a position that cannot have possible
+            # value, some wrong move has made in the past
+            if (len(possible_values) == 0):
+                return []
+            
             for number in state.get_value_possibilities(row, col):
                 actions.append(blank_position + (number,))
         
@@ -452,7 +461,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = greedy_search(problem)
+    goal_node = depth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     if (goal_node == None):
