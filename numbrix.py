@@ -13,12 +13,6 @@ ROW = 0
 COL = 1
 VALUE = 2
 
-def arrayCopy (array):
-    new_array = []
-    for value in array:
-        new_array.append(value)
-
-    return new_array
 
 def sequencesCopy (sequences):
     new_sequences = []
@@ -53,10 +47,10 @@ class NumbrixState:
 
     def apply_action(self, action):
         row, col, value = action
-        board = arrayCopy(self.board.get_representation())
-        available_values = arrayCopy(self.board.get_available_values())
-        number_sequences = arrayCopy(self.board.get_number_sequences())
-        sequences_sizes = arrayCopy(self.board.get_sequences_sizes())
+        board = self.board.get_representation().copy()
+        available_values = self.board.get_available_values().copy()
+        number_sequences = sequencesCopy(self.board.get_number_sequences())
+        sequences_sizes = self.board.get_sequences_sizes().copy()
 
         if (not self.board.is_blank_position(row, col)):
             return None
