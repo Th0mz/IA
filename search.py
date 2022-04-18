@@ -204,10 +204,13 @@ def depth_first_tree_search(problem):
     """
 
     frontier = [Node(problem.initial)]  # Stack
-
+    nodes_explored = 0
     while frontier:
+        nodes_explored += 1
         node = frontier.pop()
         if problem.goal_test(node.state):
+            print("explored nodes : ", nodes_explored)
+            print("nodes still in the frontier : ", len(frontier))
             return node
         frontier.extend(node.expand(problem))
     return None
@@ -270,6 +273,7 @@ def best_first_graph_search(problem, f, display=False):
     frontier = PriorityQueue('min', f)
     frontier.append(node)
     explored = set()
+    
     while frontier:
         node = frontier.pop()
         if problem.goal_test(node.state):
@@ -410,10 +414,10 @@ greedy_best_first_graph_search = best_first_graph_search
 
 
 # Greedy best-first search is accomplished by specifying f(n) = h(n).
-def greedy_search(problem, h=None):
+def greedy_search(problem, h=None, display=False):
     """f(n) = h(n)"""
     h = memoize(h or problem.h, 'h')
-    return best_first_graph_search(problem, h)
+    return best_first_graph_search(problem, h, display)
 
 def astar_search(problem, h=None, display=False):
     """A* search is best-first graph search with f(n) = g(n)+h(n).

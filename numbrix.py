@@ -237,7 +237,11 @@ class Board:
 
             # manhattan distance must be smaller than the difference bettween the
             # 2 adjacent values in order to be able to connect the 2 values
-            return abs(row - adj_row) + abs(col - adj_col) <= radius      
+            return abs(row - adj_row) + abs(col - adj_col) <= radius
+
+            # check if exists a path of blank positions
+            # between (row, col) and (adj_row, adj_col)
+            # TODO : implement dfs     
 
         possible_values = []
         for number in range(1, Board.num_cells + 1):
@@ -440,7 +444,6 @@ class Numbrix(Problem):
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         
-        # TODO : dont just consider the biggest sequence but all sequences
         state = node.state
         sequences_sizes = state.get_board().get_sequences_sizes()
 
@@ -449,8 +452,8 @@ class Numbrix(Problem):
             if sequence_size > 1:
                 cells_in_sequence += sequence_size
 
-        scaling_factor = 1 - 1 / (1 + state.number_blank_positions())
-        return ((2 * Board.num_cells) - cells_in_sequence - max(sequences_sizes)) * scaling_factor
+        scaling_factor = 1 + 1 / (1 + state.number_blank_positions())
+        return -(cells_in_sequence + max(sequences_sizes) * scaling_factor)
 
 
 def main():
