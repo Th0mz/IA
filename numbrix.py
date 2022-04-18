@@ -42,6 +42,14 @@ class NumbrixState:
         return list(filter(lambda position: self.board.is_blank_position(position[ROW], position[COL]),
                 positions))
 
+    def number_blank_positions (self):
+        blank_positions = 0
+        for is_available in self.board.get_available_values():
+            if is_available:
+                blank_positions += 1
+
+        return blank_positions
+
     def get_value_possibilities(self, row, col):
         return self.board.get_possible_values(row, col)
 
@@ -51,14 +59,16 @@ class NumbrixState:
         available_values = self.board.get_available_values().copy()
         number_sequences = sequencesCopy(self.board.get_number_sequences())
         sequences_sizes = self.board.get_sequences_sizes().copy()
+        number_of_blank_positions = self.board.get_number_of_blank_positions()
 
         if (not self.board.is_blank_position(row, col)):
             return None
 
         board[row * self.board.size + col] = value
         available_values[value - 1] = False
+        number_of_blank_positions -= 1
 
-        board = Board(board, self.board.get_size(), available_values, number_sequences, sequences_sizes)
+        board = Board(board, self.board.get_size(), available_values, number_sequences, sequences_sizes, number_of_blank_positions)
         board.merge_sequences_action(action)
 
         return board 
@@ -71,13 +81,15 @@ class NumbrixState:
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
+    num_cells = None
 
-    def __init__(self, representation, size, available_values, number_sequences, sequences_sizes) -> None:
+    def __init__(self, representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions) -> None:
         self.representation = representation
         self.size = size
         self.available_values = available_values
         self.number_sequences = number_sequences
         self.sequences_sizes = sequences_sizes
+        self.number_of_blank_positions = number_of_blank_positions
 
     def __repr__(self) -> str:
         board_representation = ""
@@ -144,12 +156,13 @@ class Board:
         representation = []
         available_values = []
         number_sequences = []
+        number_of_blank_positions = 0
 
         with open(filename) as file:
             # set board size
             size = int(file.readline())
-
-            available_values = [True for i in range(size**2)]
+            Board.num_cells = size ** 2
+            available_values = [True for i in range(Board.num_cells)]
                 
             # construct board internal representation
             lines = file.readlines()
@@ -161,15 +174,16 @@ class Board:
                     # check if the element is a blank space
                     if element != 0:
                         available_values[element - 1] = False
+                    else:
+                        number_of_blank_positions += 1
 
         # fill number sequences
         number_sequences = [[(row, col)] for row in range(size) for col in range(size)]
-        sequences_sizes = [1 for i in range(size ** 2)]
-        board = Board(representation, size, available_values, number_sequences, sequences_sizes)
+        sequences_sizes = [1 for i in range(Board.num_cells)]
+        board = Board(representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions)
 
         board.calculate_paths()
         
-        #setter para dar set da number_sequence
         return board
     
     def get_representation(self):
@@ -184,38 +198,48 @@ class Board:
     def get_size(self):
         return self.size
 
+    def get_number_of_blank_positions(self):
+        return self.number_of_blank_positions
+
     def is_blank_position(self, row, col):
         value = self.get_number(row, col)
         return value == 0
 
-    def get_possible_values(self, row, col):
-        def is_available_value(value):
-            if not (1 <= value <= self.size**2):
-                return False
+    def is_available_value(self, value):
+        if not (1 <= value <= Board.num_cells):
+            return False
 
-            return self.available_values[value - 1]
+        return self.available_values[value - 1]
+
+    def get_possible_values(self, row, col):
+
+        def get_number_position (number):
+            for i in range(len(self.representation)):
+                if self.representation[i] == number:
+                    return (i // self.size, i % self.size)
+
+            return None
 
         def is_in_sequence_range(row, col, number):
-            radius = self.size ** 2
-            index = None
-            # TODO : se for preciso da para tornar isto mais eficiente
-            # usar lista de sequencias em vez de toda a representação
-            for i in range(len(self.representation)):
-                value = self.representation[i]
-                new_radius = abs(value - number)
-                if (new_radius < radius):
-                    radius = new_radius
-                    index = i
+            radius = 1
+            adj_number = None
+            if (not self.is_available_value(number - radius) and number - radius >= 1):
+                 adj_number = number - radius 
+            elif (not self.is_available_value(number + radius) and number + radius <= Board.num_cells):
+                adj_number = number + radius
+            else:
+                return False
 
-            adj_row = index // self.size
-            adj_col = index % self.size
+            adj_position = get_number_position(adj_number)
+            adj_row, adj_col = adj_position
 
+            # manhattan distance must be smaller than the difference bettween the
+            # 2 adjacent values in order to be able to connect the 2 values
             return abs(row - adj_row) + abs(col - adj_col) <= radius
 
-
         possible_values = []
-        for number in range(1, self.size**2 + 1):
-            if (is_available_value(number) and is_in_sequence_range(row, col, number)):
+        for number in range(1, Board.num_cells + 1):
+            if (self.is_available_value(number) and is_in_sequence_range(row, col, number)):
                 possible_values.append(number)
 
         return possible_values
@@ -368,14 +392,14 @@ class Numbrix(Problem):
             
             successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
             predecessor = 1
-        elif(state.get_board().get_number(0,0) == state.get_board().get_size()**2):
+        elif(state.get_board().get_number(0,0) == Board.num_cells):
             predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
             
             if predecessor_coord == None:
                 return False
             
             predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
-            successor = state.get_board().get_size()**2
+            successor = Board.num_cells
         else:
             predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
             successor_coord = state.get_board().check_adjacencies(0, 0, 1)
@@ -394,7 +418,7 @@ class Numbrix(Problem):
             
             predecessor = state.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
 
-        while successor < (state.get_board().get_size()**2):
+        while successor < (Board.num_cells):
             successor_coord = state.get_board().check_adjacencies(successor_coord[ROW], successor_coord[COL], 1)
 
             if(successor_coord == None):
@@ -416,8 +440,8 @@ class Numbrix(Problem):
             if sequence_size > 1:
                 cells_in_sequence += sequence_size
 
-        num_cells = state.get_board().get_size() ** 3
-        return num_cells - cells_in_sequence - max(sequences_sizes)
+        scaling_factor = 1 - 1 / (1 + state.number_blank_positions())
+        return ((2 * Board.num_cells) - cells_in_sequence - max(sequences_sizes)) * scaling_factor
 
 
 def main():
@@ -428,7 +452,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = astar_search(problem)
+    goal_node = greedy_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     if (goal_node == None):
