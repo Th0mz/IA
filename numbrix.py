@@ -425,12 +425,8 @@ class Numbrix(Problem):
         num_cells = state.get_board().get_size() ** 3
         return num_cells - cells_in_sequence - max(sequences_sizes)
 
-def main():
-    # Ler o ficheiro de input de sys.argv[1],
-    if (len(sys.argv) != 2):
-        print("Invalid command expected : python numbrix.py <input_file_path>")
-        exit()
 
+def main():
     input_file = sys.argv[1]
     board = Board.parse_instance(input_file)
     
@@ -446,10 +442,6 @@ def main():
 
     print(goal_node.state.board, end="")
 
-
 if __name__ == "__main__":
-    # DEBUG : 
-    import cProfile
-    cProfile.run('main()', "output.dat")
-
+    main()
     
