@@ -235,7 +235,7 @@ class Board:
 
             # manhattan distance must be smaller than the difference bettween the
             # 2 adjacent values in order to be able to connect the 2 values
-            return abs(row - adj_row) + abs(col - adj_col) <= radius
+            return radius == 1 and abs(row - adj_row) + abs(col - adj_col) <= radius
 
         possible_values = []
         for number in range(1, Board.num_cells + 1):
@@ -452,7 +452,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = greedy_search(problem)
+    goal_node = depth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     if (goal_node == None):
