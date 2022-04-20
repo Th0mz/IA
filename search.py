@@ -204,10 +204,13 @@ def depth_first_tree_search(problem):
     """
 
     frontier = [Node(problem.initial)]  # Stack
-
+    number_of_nodes_generated = 0
     while frontier:
+        number_of_nodes_generated += 1
         node = frontier.pop()
         if problem.goal_test(node.state):
+            print("the number of nodes generated was : ", number_of_nodes_generated)
+            print ("and there are still ", len(frontier), " in the frontier")
             return node
         frontier.extend(node.expand(problem))
     return None
