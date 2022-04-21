@@ -252,6 +252,31 @@ class Board:
 
             return None
 
+        def path_between(self, row, col, adj_row, adj_col, depth):
+            visited_nodes = []
+            
+            start_node = (row, col)
+            goal_node = (adj_row, adj_col)
+
+            def dfs(visited, node, depth):
+                x2 , y2 = node
+                dist = (abs(x2 - start_node[ROW]) + abs(y2 - start_node[COL]))
+
+                if (node not in visited) and (dist <= depth):
+                    visited.append(node)
+
+                    if (node == goal_node) and (dist == depth):
+                        return True
+
+                    for adjancency in self.get_adjacencies(node[ROW], node[COL]):
+                        if self.is_blank_position(adjancency[ROW], adjancency[COL]):
+                            if (dfs(visited, adjancency, depth)):
+                                return True
+                
+                return False
+            
+            return dfs(visited_nodes, start_node, depth)
+
         def is_in_sequence_range(row, col, number):
             radius, adj_number = self.smallest_radius_successor(number)
             adj_position = get_number_position(adj_number)
@@ -259,8 +284,11 @@ class Board:
 
             # manhattan distance must be smaller than the difference bettween the
             # 2 adjacent values in order to be able to connect the 2 values
-            return (radius == 1) and abs(row - adj_row) + abs(col - adj_col) <= radius
+            if (not abs(adj_row - row) - abs(adj_col - col) <= radius):
+                return False
 
+            pb = path_between(self, adj_row, adj_col, row, col, radius)
+            return pb
             # check if exists a path of blank positions
             # between (row, col) and (adj_row, adj_col)
             # TODO : implement dfs 
@@ -483,9 +511,6 @@ def main():
     goal_node = depth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
-    if (goal_node == None):
-        raise Exception
-
     print(goal_node.state.board, end="")
 
 if __name__ == "__main__":
