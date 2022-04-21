@@ -6,6 +6,7 @@ then create problem instances and solve them with calls to the various search
 functions.
 """
 
+from doctest import FAIL_FAST
 import sys
 from collections import deque
 
@@ -194,7 +195,7 @@ def breadth_first_tree_search(problem):
     return None
 
 
-def depth_first_tree_search(problem):
+def depth_first_tree_search(problem, debug=False):
     """
     [Figure 3.7]
     Search the deepest nodes in the search tree first.
@@ -205,9 +206,22 @@ def depth_first_tree_search(problem):
 
     frontier = [Node(problem.initial)]  # Stack
     number_of_nodes_generated = 0
+
     while frontier:
         number_of_nodes_generated += 1
         node = frontier.pop()
+
+        if (debug == True):
+            print("===========")
+            print(node.action)
+            print(node.state.get_board())
+            for action in problem.actions(node.state):
+                print("  > ", action)
+
+            print(node.state.board.number_sequences)
+            print(node.state.board.next_sequence_value)
+            print(node.state.board.next_sequence_index)
+
         if problem.goal_test(node.state):
             print("the number of nodes generated was : ", number_of_nodes_generated)
             print ("and there are still ", len(frontier), " in the frontier")
