@@ -23,6 +23,17 @@ def sequencesCopy (sequences):
         new_sequences.append(new_sequence)
     return new_sequences
 
+def copyBoardLine(board, row):
+    new_board = []
+    for i in range(len(board)):
+        new_line = board[i]
+        if i == row:
+            new_line = new_line.copy()
+        
+        new_board.append(new_line)
+
+    return new_board
+
 
 class NumbrixState:
     state_id = 0
@@ -55,7 +66,9 @@ class NumbrixState:
 
     def apply_action(self, action):
         row, col, value = action
-        board = self.board.get_representation().copy()
+        # TODO : apenas copiar a linha que foi aletada
+
+        board = copyBoardLine(self.board.get_board(), row)
         available_values = self.board.get_available_values().copy()
         number_sequences = sequencesCopy(self.board.get_number_sequences())
         sequences_sizes = self.board.get_sequences_sizes().copy()
@@ -64,7 +77,7 @@ class NumbrixState:
         if (not self.board.is_blank_position(row, col)):
             return None
 
-        board[row * self.board.size + col] = value
+        board[row][col] = value
         available_values[value - 1] = False
         number_of_blank_positions -= 1
 
@@ -82,9 +95,10 @@ class NumbrixState:
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
     num_cells = None
+    size = None
 
-    def __init__(self, representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions) -> None:
-        self.representation = representation
+    def __init__(self, board, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions) -> None:
+        self.board = board
         self.size = size
         self.available_values = available_values
         self.number_sequences = number_sequences
@@ -92,15 +106,15 @@ class Board:
         self.number_of_blank_positions = number_of_blank_positions
 
     def __repr__(self) -> str:
-        board_representation = ""
+        board_string = ""
         for row in range(self.size):
             for col in range(self.size):
                 element = self.get_number(row, col)
-                board_representation += f"{element}\t"
+                board_string += f"{element}\t"
 
-            board_representation_size = len(board_representation)
-            board_representation = board_representation[:board_representation_size - 1] + "\n"
-        return board_representation
+            board_string_size = len(board_string)
+            board_string = board_string[:board_string_size - 1] + "\n"
+        return board_string
             
 
     def get_number(self, row: int, col: int) -> int:
@@ -108,7 +122,7 @@ class Board:
         if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
             return None
 
-        return self.representation[row * self.size + col]
+        return self.board[row][col]
     
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
@@ -153,7 +167,7 @@ class Board:
         uma instância da classe Board. """
         
         size = None
-        representation = []
+        board_representation = []
         available_values = []
         number_sequences = []
         number_of_blank_positions = 0
@@ -162,14 +176,16 @@ class Board:
             # set board size
             size = int(file.readline())
             Board.num_cells = size ** 2
+            Board.size = size
             available_values = [True for i in range(Board.num_cells)]
                 
             # construct board internal representation
             lines = file.readlines()
             for line in lines:
+                board_line = []
                 for element in line.split("\t"):
                     element = int(element)
-                    representation.append(element)
+                    board_line.append(element)
 
                     # check if the element is a blank space
                     if element != 0:
@@ -177,17 +193,20 @@ class Board:
                     else:
                         number_of_blank_positions += 1
 
+                board_representation.append(board_line)
+
         # fill number sequences
         number_sequences = [[(row, col)] for row in range(size) for col in range(size)]
         sequences_sizes = [1 for i in range(Board.num_cells)]
-        board = Board(representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions)
+        board = Board(board_representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions)
 
         board.calculate_paths()
+        print(board)
         
         return board
     
-    def get_representation(self):
-        return self.representation
+    def get_board(self):
+        return self.board
 
     def get_number_sequences(self):
         return self.number_sequences
@@ -226,9 +245,10 @@ class Board:
     def get_possible_values(self, row, col):
 
         def get_number_position (number):
-            for i in range(len(self.representation)):
-                if self.representation[i] == number:
-                    return (i // self.size, i % self.size)
+            for row in range(Board.size):
+                for col in range(Board.size):
+                    if self.get_number(row, col) == number:
+                        return (row, col)
 
             return None
 
