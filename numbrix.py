@@ -76,9 +76,6 @@ class NumbrixState:
 
         return board
 
-    def get_lowest_sequence_info (self):
-        return self.board.get_lowest_sequence_info()
-
     def get_board(self):
         return self.board
 
@@ -103,8 +100,6 @@ class Board:
         self.next_sequence_index = next_sequence_index
         self.next_sequence_value = next_sequence_value
 
-        # TODO : this direction can change according to how many values are in front and behind
-        # the smallest value (in order to get to a better performance)
         self.direction = direction
 
         # TODO : se isto não for usado para nada remover
@@ -258,7 +253,18 @@ class Board:
             reference = -1
 
         position = self.number_sequences[self.lowest_sequence_index][reference]
-        return (position, self.lowest_sequence_value, self.direction)
+        return (position, self.lowest_sequence_value)
+
+    def get_next_sequence_info (self):
+        reference = -1
+        if self.direction == 1:
+            reference = 0
+
+        if (self.next_sequence_index == None):
+            return (None, self.lowest_sequence_value)
+
+        position = self.number_sequences[self.next_sequence_index][reference]
+        return (position, self.next_sequence_value)
 
     def is_blank_position(self, row, col):
         value = self.get_number(row, col)
@@ -293,7 +299,7 @@ class Board:
 
             return None
         
-        row, col, _ = action
+        row, col, value = action
         self.number_sequences.append([(row, col)])
 
         position, index = (0, len(self.number_sequences) - 1)
@@ -305,28 +311,34 @@ class Board:
             lowest_position = -1
             next_position = 0
 
-        next = self.number_sequences[self.next_sequence_index][next_position]
+        if (self.next_sequence_index != None):
+            next = self.number_sequences[self.next_sequence_index][next_position]
 
         self.merge_sequences(index, self.lowest_sequence_index, position, lowest_position)
 
         self.lowest_sequence_value += self.direction
         self.lowest_sequence_index = len(self.number_sequences) - 1
         
-        next_position, next_index = get_sequence(next)
-        self.next_sequence_index = next_index
+        if (self.next_sequence_index != None):
+            next_position, next_index = get_sequence(next)
+            self.next_sequence_index = next_index
         
         # check if it can join to the next sequence
-        if self.is_adjency(next, (row, col)) and self.is_successor(next, (row, col)):
+        if self.next_sequence_index != None and self.is_adjency(next, (row, col)) and self.is_successor(next, (row, col)):
             self.merge_sequences(next_index, self.lowest_sequence_index, next_position, lowest_position)
-
             self.lowest_sequence_index = len(self.number_sequences) - 1
-            # TODO : se chegarmos ao ultimo elemento da lowest_sequence é o
-            # elemento mais alto que se pode colocar na board
-            # se sim inverter o sentido
-            # ou continuar sem rumo se não existir uma sequencia mais alta
+            
             new_row, new_col = self.number_sequences[self.lowest_sequence_index][lowest_position]
             self.lowest_sequence_value = self.get_number(new_row, new_col)
 
+            self.update_next_sequence()
+
+        # change direction if the biggest value in the lowest
+        # sequence is the biggest value that we can put on the board
+        if (self.direction == 1 and self.lowest_sequence_value == Board.num_cells):
+            self.direction = -1
+            row, col = self.number_sequences[self.lowest_sequence_index][0]
+            self.lowest_sequence_value = self.get_number(row, col)
             self.update_next_sequence()
 
 
@@ -334,18 +346,30 @@ class Board:
         
         # TODO : fazer update_next_sequence abstrato => não importa a direção
         # esta implementação assume que estamos a andar para a frente
-        next_value = Board.num_cells + 1
+
+        next_value = -1
+        if (self.direction == 1):
+            next_value = Board.num_cells + 1
+
         next_index = None
         for i in range(len(self.number_sequences)):
             if (i != self.lowest_sequence_index):
                 row, col = self.number_sequences[i][0]
                 value = self.get_number(row, col)
-                if (value < next_value):
+                # TODO : isto da para fazer em apenas 1 if 
+                if (self.direction == 1 and value < next_value):
+                    next_value = value
+                    next_index = i
+                elif (self.direction == -1 and value > next_value):
                     next_value = value
                     next_index = i
 
         if (next_index == None):
-            return False
+            # TODO : now im assuming that direction == 1
+            # => there is no next sequence
+            self.next_sequence_value = next_value
+            self.next_sequence_index = None
+            return
 
         self.next_sequence_index = next_index
         self.next_sequence_value = next_value
@@ -427,22 +451,33 @@ class Numbrix(Problem):
         partir do estado passado como argumento. """
         actions = []
         
-        position, value, direction = state.get_lowest_sequence_info()
-        row, col = position
-
         board = state.get_board()
+        lowest_position, lowest_value = board.get_lowest_sequence_info()
+        next_position, next_value = board.get_next_sequence_info()
+        direction = board.get_direction()
+
 
         # TODO : alterar de forma a que seja dinamico com a mudança de direção
-        if (board.get_lowest_sequence_value() >= board.get_next_sequence_value() - 1):
+        if (direction == 1 and board.get_lowest_sequence_value() >= board.get_next_sequence_value() - 1):
+            return []
+        
+        if (direction == -1 and board.get_lowest_sequence_value() <= board.get_next_sequence_value() + 1):
             return []
 
-        adjacencies = state.get_board().get_blank_adjacencies(row, col)
+        lowest_row, lowest_col = lowest_position
+        adjacencies = state.get_board().get_blank_adjacencies(lowest_row, lowest_col)
+
+        if (next_position != None):
+            next_row, next_col = next_position
+        
         for adjency in adjacencies:
+            adj_row, adj_col = adjency
+            
+            actions.append((adj_row, adj_col, lowest_value + direction))
+            
+
             # TODO : verificar se há um caminho branco da adjecencia para a sequencia mais
             # baixa mais próxima
-
-            adj_row, adj_col = adjency
-            actions.append((adj_row, adj_col, value + direction))
 
         return actions
 
@@ -520,7 +555,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem, debug=True)
+    goal_node = depth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
