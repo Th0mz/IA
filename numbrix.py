@@ -527,49 +527,11 @@ class Numbrix(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
         
-        if(state.get_board().get_number(0, 0) == 1):
-            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
-            
-            if successor_coord == None:
-                return False
-            
-            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
-            predecessor = 1
-        elif(state.get_board().get_number(0,0) == Board.num_cells):
-            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
-            
-            if predecessor_coord == None:
-                return False
-            
-            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
-            successor = Board.num_cells
-        else:
-            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
-            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
+        board = state.get_board()
+        if (board.get_number_of_blank_positions() != 0):
+            return False
 
-            if (predecessor_coord == None or successor_coord == None):
-                return False
-
-            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
-            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
-        
-        while predecessor > 1:
-            predecessor_coord = state.get_board().check_adjacencies(predecessor_coord[ROW], predecessor_coord[COL], -1)
-
-            if(predecessor_coord == None):
-                return False
-            
-            predecessor = state.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
-
-        while successor < (Board.num_cells):
-            successor_coord = state.get_board().check_adjacencies(successor_coord[ROW], successor_coord[COL], 1)
-
-            if(successor_coord == None):
-                return False
-            
-            successor = state.get_board().get_number(successor_coord[0], successor_coord[1])
-
-        return True
+        return len(board.get_number_sequences()) == 1
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
@@ -586,7 +548,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem, debug=True)
+    goal_node = depth_first_tree_search(problem, debug=False)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
