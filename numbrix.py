@@ -445,6 +445,25 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         super().__init__(NumbrixState(board))
+
+    def path_between(self, board, start_node, goal_node, depth):
+            def dfs(visited, node, depth):
+                row , col = node
+                dist = abs(row - start_node[ROW]) + abs(col - start_node[COL])
+
+                if (node not in visited) and (dist < depth):
+                    visited.append(node)
+
+                    if (dist + 1 == depth) and board.is_adjency(node, goal_node):
+                        return True
+
+                    for adjacency in board.get_blank_adjacencies(row, col):
+                        if (dfs(visited, adjacency, depth)):
+                            return True
+                
+                return False
+            
+            return dfs([], start_node, depth)
  
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -470,14 +489,26 @@ class Numbrix(Problem):
         if (next_position != None):
             next_row, next_col = next_position
         
+        radius = abs(next_value - (lowest_value + direction))
+
         for adjency in adjacencies:
             adj_row, adj_col = adjency
             
-            if (next_position == None) or (abs(next_row - adj_row) + abs(next_col - adj_col) <= abs(next_value - (lowest_value + direction))):
+            if (next_position == None) or (abs(next_row - adj_row) + abs(next_col - adj_col) <= radius):
                 actions.append((adj_row, adj_col, lowest_value + direction))
 
-            # TODO : verificar se há um caminho branco da adjecencia para a sequencia mais
-            # baixa mais próxima
+        if (len(actions) == 1):
+            return actions
+        
+        # if there is more than one possible action check if all of the actions
+        # can reach the next_sequence by a blank path
+        #for i in range(len(actions) - 1, -1, -1):    
+        #    row, col, _ = actions[i]
+        #    position = (row, col)
+        #
+        #    has_path_between = self.path_between(board, position, next_position, radius)
+        #    if (not has_path_between):
+        #        actions.pop(i)
 
         return actions
 
@@ -555,7 +586,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem)
+    goal_node = depth_first_tree_search(problem, debug=True)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
