@@ -473,8 +473,8 @@ class Numbrix(Problem):
         for adjency in adjacencies:
             adj_row, adj_col = adjency
             
-            actions.append((adj_row, adj_col, lowest_value + direction))
-            
+            if (next_position == None) or (abs(next_row - adj_row) + abs(next_col - adj_col) <= abs(next_value - (lowest_value + direction))):
+                actions.append((adj_row, adj_col, lowest_value + direction))
 
             # TODO : verificar se há um caminho branco da adjecencia para a sequencia mais
             # baixa mais próxima
