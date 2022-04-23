@@ -447,10 +447,10 @@ class Numbrix(Problem):
         super().__init__(NumbrixState(board))
 
     def path_between(self, board, start_node, goal_node, depth):
-        def dfs(visited, node, depth):
-            row , col = node
-            dist = abs(row - start_node[ROW]) + abs(col - start_node[COL])
 
+        def dfs(visited, node, depth, dist):
+            row , col = node
+            #usar o goal_node para confirmar que chegaste ao fim
             if (node not in visited) and (dist < depth):
                 visited.append(node)
 
@@ -458,12 +458,15 @@ class Numbrix(Problem):
                     return True
 
                 for adjacency in board.get_blank_adjacencies(row, col):
-                    if (dfs(visited, adjacency, depth)):
+                    if (dfs(visited, adjacency, depth, dist + 1)):
                         return True
             
+                visited.remove(node)
+            
+
             return False
             
-        return dfs([], start_node, depth)
+        return dfs([], start_node, depth, 0)
  
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
