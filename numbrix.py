@@ -13,16 +13,6 @@ ROW = 0
 COL = 1
 VALUE = 2
 
-
-def sequencesCopy (sequences):
-    new_sequences = []
-    for sequence in sequences:
-        new_sequence = []
-        for position in sequence:
-            new_sequence.append(position)
-        new_sequences.append(new_sequence)
-    return new_sequences
-
 def copyBoardLine(board, row):
     new_board = []
     for i in range(len(board)):
@@ -55,7 +45,7 @@ class NumbrixState:
 
         board_representation = copyBoardLine(self.board.get_board(), row)
         available_values = self.board.get_available_values().copy()
-        number_sequences = sequencesCopy(self.board.get_number_sequences())
+        number_sequences = self.board.get_number_sequences().copy()
         sequences_sizes = self.board.get_sequences_sizes().copy()
         lowest_sequence_index = self.board.get_lowest_sequence_index()
         lowest_sequence_value = self.board.get_lowest_sequence_value()
