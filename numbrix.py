@@ -13,102 +13,106 @@ ROW = 0
 COL = 1
 VALUE = 2
 
+def copyBoardLine(board, row):
+    new_board = []
+    for i in range(len(board)):
+        new_line = board[i]
+        if i == row:
+            new_line = new_line.copy()
+        
+        new_board.append(new_line)
 
-def sequencesCopy (sequences):
-    new_sequences = []
-    for sequence in sequences:
-        new_sequence = []
-        for position in sequence:
-            new_sequence.append(position)
-        new_sequences.append(new_sequence)
-    return new_sequences
+    return new_board
 
 
 class NumbrixState:
     state_id = 0
 
-    def __init__(self, board, last_action):
+    def __init__(self, board):
         self.board = board
-        self.last_action = last_action
         self.id = NumbrixState.state_id
         NumbrixState.state_id += 1
+
 
     def __lt__(self, other):
         return self.id < other.id
 
-    def get_blank_positions(self):
-        positions = [(i, j) for i in range(self.board.get_size()) for j in range(self.board.get_size())]
-        
-        return list(filter(lambda position: self.board.is_blank_position(position[ROW], position[COL]),
-                positions))
-
     def number_blank_positions (self):
-        blank_positions = 0
-        for is_available in self.board.get_available_values():
-            if is_available:
-                blank_positions += 1
-
-        return blank_positions
-
-    def get_value_possibilities(self, row, col):
-        return self.board.get_possible_values(row, col)
+        return self.board.get_number_of_blank_positions()
 
     def apply_action(self, action):
         row, col, value = action
-        board = self.board.get_representation().copy()
+
+        board_representation = copyBoardLine(self.board.get_board(), row)
         available_values = self.board.get_available_values().copy()
-        number_sequences = sequencesCopy(self.board.get_number_sequences())
+        number_sequences = self.board.get_number_sequences().copy()
         sequences_sizes = self.board.get_sequences_sizes().copy()
+        lowest_sequence_index = self.board.get_lowest_sequence_index()
+        lowest_sequence_value = self.board.get_lowest_sequence_value()
+        next_sequence_index = self.board.get_next_sequence_index()
+        next_sequence_value = self.board.get_next_sequence_value()
+        direction = self.board.get_direction()
         number_of_blank_positions = self.board.get_number_of_blank_positions()
 
         if (not self.board.is_blank_position(row, col)):
             return None
 
-        board[row * self.board.size + col] = value
+        board_representation[row][col] = value
         available_values[value - 1] = False
         number_of_blank_positions -= 1
 
-        board = Board(board, self.board.get_size(), available_values, number_sequences, sequences_sizes, number_of_blank_positions)
+        board = Board(board_representation, available_values, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions)
         board.merge_sequences_action(action)
 
-        return board 
+        return board
 
     def get_board(self):
         return self.board
 
-    def get_last_action(self):
-        return self.last_action
+
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
     num_cells = None
+    size = None
 
-    def __init__(self, representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions) -> None:
-        self.representation = representation
-        self.size = size
+    def __init__(self, board, available_values, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions) -> None:
+        # board representation
+        self.board = board
         self.available_values = available_values
+
+        # number sequences
         self.number_sequences = number_sequences
         self.sequences_sizes = sequences_sizes
+        self.lowest_sequence_index = lowest_sequence_index
+        self.lowest_sequence_value = lowest_sequence_value
+
+        self.next_sequence_index = next_sequence_index
+        self.next_sequence_value = next_sequence_value
+
+        self.direction = direction
+
+        # TODO : se isto não for usado para nada remover
         self.number_of_blank_positions = number_of_blank_positions
 
     def __repr__(self) -> str:
-        board_representation = ""
-        for row in range(self.size):
-            for col in range(self.size):
+        board_string = ""
+        for row in range(Board.size):
+            for col in range(Board.size):
                 element = self.get_number(row, col)
-                board_representation += f"{element}\t"
+                board_string += f"{element}\t"
 
-            board_representation_size = len(board_representation)
-            board_representation = board_representation[:board_representation_size - 1] + "\n"
-        return board_representation
+            board_string_size = len(board_string)
+            board_string = board_string[:board_string_size - 1] + "\n"
+        return board_string
             
 
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
-        if (not (0 <= row <= self.size - 1)) or (not (0 <= col <= self.size - 1)):
+        if (not (0 <= row <= Board.size - 1)) or (not (0 <= col <= Board.size - 1)):
             return None
 
-        return self.representation[row * self.size + col]
+        return self.board[row][col]
     
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """ Devolve os valores imediatamente abaixo e acima, 
@@ -135,12 +139,23 @@ class Board:
 
         return adjacencies
 
+    def get_blank_adjacencies(self, row, col):
+        relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
+        adjacencies = []
+        
+        for pos in relative_positions:
+            new_row, new_col = pos[ROW] + row, pos[COL] + col
+
+            if(self.get_number(new_row, new_col) == 0):
+                adjacencies.append((new_row, new_col))
+
+        return adjacencies
+
     def check_adjacencies(self, row, col, relative_value):
         adjacencies = self.get_adjacencies(row, col)
-        value = self.get_number(row,col) + relative_value
+        value = self.get_number(row, col) + relative_value
 
         for adjacency in adjacencies:
-
             if(self.get_number(adjacency[ROW], adjacency[COL]) == value):
                 return adjacency
         
@@ -153,7 +168,7 @@ class Board:
         uma instância da classe Board. """
         
         size = None
-        representation = []
+        board_representation = []
         available_values = []
         number_sequences = []
         number_of_blank_positions = 0
@@ -162,32 +177,41 @@ class Board:
             # set board size
             size = int(file.readline())
             Board.num_cells = size ** 2
+            Board.size = size
             available_values = [True for i in range(Board.num_cells)]
                 
             # construct board internal representation
             lines = file.readlines()
+
+            i, j = (0, 0)
             for line in lines:
+                board_line = []
                 for element in line.split("\t"):
                     element = int(element)
-                    representation.append(element)
+                    board_line.append(element)
 
                     # check if the element is a blank space
                     if element != 0:
                         available_values[element - 1] = False
+                        number_sequences.append([(i, j)])
                     else:
                         number_of_blank_positions += 1
 
+                    j = (j + 1) % size
+                i = (i + 1) % size      
+
+                board_representation.append(board_line)
+
         # fill number sequences
-        number_sequences = [[(row, col)] for row in range(size) for col in range(size)]
         sequences_sizes = [1 for i in range(Board.num_cells)]
-        board = Board(representation, size, available_values, number_sequences, sequences_sizes, number_of_blank_positions)
+        board = Board(board_representation, available_values, number_sequences, sequences_sizes, None, None, None, None, 1, number_of_blank_positions)
 
         board.calculate_paths()
-        
+
         return board
     
-    def get_representation(self):
-        return self.representation
+    def get_board(self):
+        return self.board
 
     def get_number_sequences(self):
         return self.number_sequences
@@ -195,60 +219,46 @@ class Board:
     def get_sequences_sizes(self):
         return self.sequences_sizes
 
-    def get_size(self):
-        return self.size
-
     def get_number_of_blank_positions(self):
         return self.number_of_blank_positions
+
+    def get_lowest_sequence_index (self):
+        return self.lowest_sequence_index
+
+    def get_lowest_sequence_value (self):
+        return self.lowest_sequence_value
+
+    def get_next_sequence_index (self):
+        return self.next_sequence_index
+
+    def get_next_sequence_value (self):
+        return self.next_sequence_value
+
+    def get_direction (self):
+        return self.direction
+
+    def get_lowest_sequence_info (self):
+        reference = 0
+        if self.direction == 1:
+            reference = -1
+
+        position = self.number_sequences[self.lowest_sequence_index][reference]
+        return (position, self.lowest_sequence_value)
+
+    def get_next_sequence_info (self):
+        reference = -1
+        if self.direction == 1:
+            reference = 0
+
+        if (self.next_sequence_index == None):
+            return (None, self.lowest_sequence_value)
+
+        position = self.number_sequences[self.next_sequence_index][reference]
+        return (position, self.next_sequence_value)
 
     def is_blank_position(self, row, col):
         value = self.get_number(row, col)
         return value == 0
-
-    def is_available_value(self, value):
-        if not (1 <= value <= Board.num_cells):
-            return False
-
-        return self.available_values[value - 1]
-
-    def smallest_radius_successor (self, number):
-        max_radius = max(number - 1,   self.size ** 2 - number)
-        for radius in range(1, max_radius):
-            if (not self.is_available_value(number - radius) and number - radius >= 1):
-                return (radius, number - radius) 
-            elif (not self.is_available_value(number + radius) and number + radius <= self.size**2):
-                return (radius, number + radius)
-                
-        return None
-
-    def get_possible_values(self, row, col):
-
-        def get_number_position (number):
-            for i in range(len(self.representation)):
-                if self.representation[i] == number:
-                    return (i // self.size, i % self.size)
-
-            return None
-
-        def is_in_sequence_range(row, col, number):
-            radius, adj_number = self.smallest_radius_successor(number)
-            adj_position = get_number_position(adj_number)
-            adj_row, adj_col = adj_position
-
-            # manhattan distance must be smaller than the difference bettween the
-            # 2 adjacent values in order to be able to connect the 2 values
-            return abs(row - adj_row) + abs(col - adj_col) <= radius
-
-            # check if exists a path of blank positions
-            # between (row, col) and (adj_row, adj_col)
-            # TODO : implement dfs     
-
-        possible_values = []
-        for number in range(1, Board.num_cells + 1):
-            if (self.is_available_value(number) and is_in_sequence_range(row, col, number)):
-                possible_values.append(number)
-
-        return possible_values
 
     def get_available_values(self):
         return self.available_values
@@ -267,6 +277,7 @@ class Board:
 
 
     def merge_sequences_action(self, action):
+
         def get_sequence(position):
             row, col = position
             for i in range(len(self.number_sequences)):
@@ -279,22 +290,79 @@ class Board:
             return None
         
         row, col, value = action
-        position, index = get_sequence((row, col))
+        self.number_sequences.append([(row, col)])
+
+        position, index = (0, len(self.number_sequences) - 1)
+
+        # join to the smallest sequence
+        lowest_position = 0
+        next_position = -1
+        if self.direction == 1:
+            lowest_position = -1
+            next_position = 0
+
+        if (self.next_sequence_index != None):
+            next = self.number_sequences[self.next_sequence_index][next_position]
+
+        self.merge_sequences(index, self.lowest_sequence_index, position, lowest_position)
+
+        self.lowest_sequence_value += self.direction
+        self.lowest_sequence_index = len(self.number_sequences) - 1
         
-        adjacencies = self.get_adjacencies(row, col)
-        for adjency in adjacencies:
-            if (self.is_successor((row, col), adjency)):
-                adj_sequence_info = get_sequence(adjency)
-                if (adj_sequence_info != None):
-                    adj_position, adj_index = adj_sequence_info
-                    self.merge_sequences(index, adj_index, position, adj_position)
+        if (self.next_sequence_index != None):
+            next_position, next_index = get_sequence(next)
+            self.next_sequence_index = next_index
+        
+        # check if it can join to the next sequence
+        if self.next_sequence_index != None and self.is_adjency(next, (row, col)) and self.is_successor(next, (row, col)):
+            self.merge_sequences(next_index, self.lowest_sequence_index, next_position, lowest_position)
+            self.lowest_sequence_index = len(self.number_sequences) - 1
+            
+            new_row, new_col = self.number_sequences[self.lowest_sequence_index][lowest_position]
+            self.lowest_sequence_value = self.get_number(new_row, new_col)
 
-                    sequence_info = get_sequence((row, col))
-                    if (sequence_info == None):
-                        return
+            self.update_next_sequence()
 
-                    position, index = sequence_info
+        # change direction if the biggest value in the lowest
+        # sequence is the biggest value that we can put on the board
+        if (self.direction == 1 and self.lowest_sequence_value == Board.num_cells):
+            self.direction = -1
+            row, col = self.number_sequences[self.lowest_sequence_index][0]
+            self.lowest_sequence_value = self.get_number(row, col)
+            self.update_next_sequence()
 
+
+    def update_next_sequence(self):
+        
+        # TODO : fazer update_next_sequence abstrato => não importa a direção
+        # esta implementação assume que estamos a andar para a frente
+
+        next_value = -1
+        if (self.direction == 1):
+            next_value = Board.num_cells + 1
+
+        next_index = None
+        for i in range(len(self.number_sequences)):
+            if (i != self.lowest_sequence_index):
+                row, col = self.number_sequences[i][0]
+                value = self.get_number(row, col)
+                # TODO : isto da para fazer em apenas 1 if 
+                if (self.direction == 1 and value < next_value):
+                    next_value = value
+                    next_index = i
+                elif (self.direction == -1 and value > next_value):
+                    next_value = value
+                    next_index = i
+
+        if (next_index == None):
+            # TODO : now im assuming that direction == 1
+            # => there is no next sequence
+            self.next_sequence_value = next_value
+            self.next_sequence_index = None
+            return
+
+        self.next_sequence_index = next_index
+        self.next_sequence_value = next_value
 
     def merge_sequences(self, index_i, index_j, position_i, position_j):
         sequence_i = self.number_sequences[index_i]
@@ -348,32 +416,93 @@ class Board:
         
         while merge_sequence():
             pass
+        
+        self.lowest_sequence_value = Board.num_cells + 1
+        self.lowest_sequence_index = None
+        for i in range(len(self.number_sequences)):
+            sequence = self.number_sequences[i]
+            row, col = sequence[-1]
+            value = self.get_number(row, col)
+            if self.lowest_sequence_value > value:
+                self.lowest_sequence_value = value
+                self.lowest_sequence_index = i
 
-
+        self.update_next_sequence()
 
 
 
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        super().__init__(NumbrixState(board, None))
+        super().__init__(NumbrixState(board))
+
+    def path_between(self, board, start_node, goal_node, depth):
+
+        def dfs(visited, node, depth, dist):
+            row , col = node
+            #usar o goal_node para confirmar que chegaste ao fim
+            if (node not in visited) and (dist < depth):
+                visited.append(node)
+
+                if (dist + 1 == depth) and board.is_adjency(node, goal_node):
+                    return True
+
+                for adjacency in board.get_blank_adjacencies(row, col):
+                    if (dfs(visited, adjacency, depth, dist + 1)):
+                        return True
+            
+                visited.remove(node)
+            
+
+            return False
+            
+        return dfs([], start_node, depth, 0)
  
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
         actions = []
-        for blank_position in state.get_blank_positions():
-            row, col = blank_position
-            possible_values = state.get_value_possibilities(row, col)
-
-            # if there is a position that cannot have possible
-            # value, some wrong move has made in the past
-            if (len(possible_values) == 0):
-                return []
-            
-            for number in state.get_value_possibilities(row, col):
-                actions.append(blank_position + (number,))
         
+        board = state.get_board()
+        lowest_position, lowest_value = board.get_lowest_sequence_info()
+        next_position, next_value = board.get_next_sequence_info()
+        direction = board.get_direction()
+
+
+        # TODO : alterar de forma a que seja dinamico com a mudança de direção
+        if (direction == 1 and board.get_lowest_sequence_value() >= board.get_next_sequence_value() - 1):
+            return []
+        
+        if (direction == -1 and board.get_lowest_sequence_value() <= board.get_next_sequence_value() + 1):
+            return []
+
+        lowest_row, lowest_col = lowest_position
+        adjacencies = state.get_board().get_blank_adjacencies(lowest_row, lowest_col)
+
+        if (next_position != None):
+            next_row, next_col = next_position
+        
+        radius = abs(next_value - (lowest_value + direction))
+
+        for adjency in adjacencies:
+            adj_row, adj_col = adjency
+            
+            if (next_position == None) or (abs(next_row - adj_row) + abs(next_col - adj_col) <= radius):
+                actions.append((adj_row, adj_col, lowest_value + direction))
+
+        if (len(actions) == 1 or next_position == None):
+            return actions
+        
+        # if there is more than one possible action check if all of the actions
+        # can reach the next_sequence by a blank path
+        for i in range(len(actions) - 1, -1, -1):    
+            row, col, _ = actions[i]
+            position = (row, col)
+            
+            has_path_between = self.path_between(board, position, next_position, radius)
+            if (not has_path_between):
+                actions.pop(i)
+
         return actions
 
     def result(self, state: NumbrixState, action):
@@ -382,12 +511,8 @@ class Numbrix(Problem):
         das presentes na lista obtida pela execução de 
         self.actions(state). """
         
-        if (action not in self.actions(state)):
-            # TODO : refactor this exception
-            raise Exception
-
         new_board = state.apply_action(action)
-        new_state = NumbrixState(new_board, action)
+        new_state = NumbrixState(new_board)
         return new_state
 
     def goal_test(self, state: NumbrixState):
@@ -395,65 +520,17 @@ class Numbrix(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
         
-        #predecessor
-        #sucesor
-        if(state.get_board().get_number(0, 0) == 1):
-            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
-            
-            if successor_coord == None:
-                return False
-            
-            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
-            predecessor = 1
-        elif(state.get_board().get_number(0,0) == Board.num_cells):
-            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
-            
-            if predecessor_coord == None:
-                return False
-            
-            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
-            successor = Board.num_cells
-        else:
-            predecessor_coord = state.get_board().check_adjacencies(0, 0, -1)
-            successor_coord = state.get_board().check_adjacencies(0, 0, 1)
+        board = state.get_board()
+        if (board.get_number_of_blank_positions() != 0):
+            return False
 
-            if (predecessor_coord == None or successor_coord == None):
-                return False
-
-            predecessor = state.get_board().get_number(predecessor_coord[ROW], predecessor_coord[COL])
-            successor = state.get_board().get_number(successor_coord[ROW], successor_coord[COL])
-        
-        while predecessor > 1:
-            predecessor_coord = state.get_board().check_adjacencies(predecessor_coord[ROW], predecessor_coord[COL], -1)
-
-            if(predecessor_coord == None):
-                return False
-            
-            predecessor = state.get_board().get_number(predecessor_coord[0], predecessor_coord[1])
-
-        while successor < (Board.num_cells):
-            successor_coord = state.get_board().check_adjacencies(successor_coord[ROW], successor_coord[COL], 1)
-
-            if(successor_coord == None):
-                return False
-            
-            successor = state.get_board().get_number(successor_coord[0], successor_coord[1])
-
-        return True
+        return len(board.get_number_sequences()) == 1
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         
-        state = node.state
-        sequences_sizes = state.get_board().get_sequences_sizes()
-
-        cells_in_sequence = 0
-        for sequence_size in sequences_sizes:
-            if sequence_size > 1:
-                cells_in_sequence += sequence_size
-
-        scaling_factor = 1 + 1 / (1 + state.number_blank_positions())
-        return -(cells_in_sequence + max(sequences_sizes) * scaling_factor)
+        # TODO : dont just consider the biggest sequence but all sequences
+        pass        
 
 
 def main():
@@ -467,9 +544,6 @@ def main():
     goal_node = depth_first_tree_search(problem)
 
     # Imprimir para o standard output no formato indicado.
-    if (goal_node == None):
-        raise Exception
-
     print(goal_node.state.board, end="")
 
 if __name__ == "__main__":
