@@ -37,14 +37,10 @@ class NumbrixState:
     def __lt__(self, other):
         return self.id < other.id
 
-    def number_blank_positions (self):
-        return self.board.get_number_of_blank_positions()
-
     def apply_action(self, action):
         row, col, value = action
 
         board_representation = copyBoardLine(self.board.get_board(), row)
-        available_values = self.board.get_available_values().copy()
         number_sequences = self.board.get_number_sequences().copy()
         sequences_sizes = self.board.get_sequences_sizes().copy()
         lowest_sequence_index = self.board.get_lowest_sequence_index()
@@ -58,10 +54,9 @@ class NumbrixState:
             return None
 
         board_representation[row][col] = value
-        available_values[value - 1] = False
         number_of_blank_positions -= 1
 
-        board = Board(board_representation, available_values, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions)
+        board = Board(board_representation, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions)
         board.merge_sequences_action(action)
 
         return board
@@ -76,10 +71,9 @@ class Board:
     num_cells = None
     size = None
 
-    def __init__(self, board, available_values, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions) -> None:
+    def __init__(self, board, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions) -> None:
         # board representation
         self.board = board
-        self.available_values = available_values
 
         # number sequences
         self.number_sequences = number_sequences
@@ -169,7 +163,6 @@ class Board:
         
         size = None
         board_representation = []
-        available_values = []
         number_sequences = []
         number_of_blank_positions = 0
 
@@ -178,7 +171,6 @@ class Board:
             size = int(file.readline())
             Board.num_cells = size ** 2
             Board.size = size
-            available_values = [True for i in range(Board.num_cells)]
                 
             # construct board internal representation
             lines = file.readlines()
@@ -192,7 +184,6 @@ class Board:
 
                     # check if the element is a blank space
                     if element != 0:
-                        available_values[element - 1] = False
                         number_sequences.append([(i, j)])
                     else:
                         number_of_blank_positions += 1
@@ -204,7 +195,7 @@ class Board:
 
         # fill number sequences
         sequences_sizes = [1 for i in range(Board.num_cells)]
-        board = Board(board_representation, available_values, number_sequences, sequences_sizes, None, None, None, None, 1, number_of_blank_positions)
+        board = Board(board_representation, number_sequences, sequences_sizes, None, None, None, None, 1, number_of_blank_positions)
 
         board.calculate_paths()
 
@@ -259,9 +250,6 @@ class Board:
     def is_blank_position(self, row, col):
         value = self.get_number(row, col)
         return value == 0
-
-    def get_available_values(self):
-        return self.available_values
 
     def is_adjency (self, x, y):
         return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
