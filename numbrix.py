@@ -42,7 +42,6 @@ class NumbrixState:
 
         board_representation = copyBoardLine(self.board.get_board(), row)
         number_sequences = self.board.get_number_sequences().copy()
-        sequences_sizes = self.board.get_sequences_sizes().copy()
         lowest_sequence_index = self.board.get_lowest_sequence_index()
         lowest_sequence_value = self.board.get_lowest_sequence_value()
         next_sequence_index = self.board.get_next_sequence_index()
@@ -50,13 +49,10 @@ class NumbrixState:
         direction = self.board.get_direction()
         number_of_blank_positions = self.board.get_number_of_blank_positions()
 
-        if (not self.board.is_blank_position(row, col)):
-            return None
-
         board_representation[row][col] = value
         number_of_blank_positions -= 1
 
-        board = Board(board_representation, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions)
+        board = Board(board_representation, number_sequences, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions)
         board.merge_sequences_action(action)
 
         return board
@@ -71,13 +67,12 @@ class Board:
     num_cells = None
     size = None
 
-    def __init__(self, board, number_sequences, sequences_sizes, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions) -> None:
+    def __init__(self, board, number_sequences, lowest_sequence_index, lowest_sequence_value, next_sequence_index, next_sequence_value, direction, number_of_blank_positions) -> None:
         # board representation
         self.board = board
 
         # number sequences
         self.number_sequences = number_sequences
-        self.sequences_sizes = sequences_sizes
         self.lowest_sequence_index = lowest_sequence_index
         self.lowest_sequence_value = lowest_sequence_value
 
@@ -121,18 +116,6 @@ class Board:
         
         return (self.get_number(row , col - 1), self.get_number(row , col + 1))
     
-    def get_adjacencies(self, row , col):
-        relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
-        adjacencies = []
-        
-        for pos in relative_positions:
-            new_row, new_col = pos[ROW] + row, pos[COL] + col
-
-            if(self.get_number(new_row, new_col) != None):
-                adjacencies.append((new_row, new_col))
-
-        return adjacencies
-
     def get_blank_adjacencies(self, row, col):
         relative_positions = [[0, 1], [0, -1], [-1, 0], [1,0]]
         adjacencies = []
@@ -144,17 +127,6 @@ class Board:
                 adjacencies.append((new_row, new_col))
 
         return adjacencies
-
-    def check_adjacencies(self, row, col, relative_value):
-        adjacencies = self.get_adjacencies(row, col)
-        value = self.get_number(row, col) + relative_value
-
-        for adjacency in adjacencies:
-            if(self.get_number(adjacency[ROW], adjacency[COL]) == value):
-                return adjacency
-        
-        return None
-
     
     @staticmethod    
     def parse_instance(filename: str):
@@ -194,8 +166,7 @@ class Board:
                 board_representation.append(board_line)
 
         # fill number sequences
-        sequences_sizes = [1 for i in range(Board.num_cells)]
-        board = Board(board_representation, number_sequences, sequences_sizes, None, None, None, None, 1, number_of_blank_positions)
+        board = Board(board_representation, number_sequences, None, None, None, None, 1, number_of_blank_positions)
 
         board.calculate_paths()
 
@@ -206,9 +177,6 @@ class Board:
 
     def get_number_sequences(self):
         return self.number_sequences
-
-    def get_sequences_sizes(self):
-        return self.sequences_sizes
 
     def get_number_of_blank_positions(self):
         return self.number_of_blank_positions
@@ -246,10 +214,6 @@ class Board:
 
         position = self.number_sequences[self.next_sequence_index][reference]
         return (position, self.next_sequence_value)
-
-    def is_blank_position(self, row, col):
-        value = self.get_number(row, col)
-        return value == 0
 
     def is_adjency (self, x, y):
         return abs(x[ROW] - y[ROW]) + abs(x[COL] - y[COL]) == 1
@@ -373,9 +337,6 @@ class Board:
         self.number_sequences.pop(max_index)
         self.number_sequences.pop(min_index)
         self.number_sequences.append(new_sequence)
-
-        new_sequence_size = self.sequences_sizes.pop(max_index) + self.sequences_sizes.pop(min_index)
-        self.sequences_sizes.append(new_sequence_size)
 
     def calculate_paths(self):      
 
