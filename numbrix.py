@@ -132,6 +132,21 @@ class Board:
     def parse_instance(filename: str):
         """ Lê o ficheiro cujo caminho é passado como argumento e retorna
         uma instância da classe Board. """
+
+        def get_board_number(board_repr, row, col):
+            if (not (0 <= row <= Board.size - 1)) or (not (0 <= col <= Board.size - 1)):
+                return None
+            
+            return board_repr[row][col]
+
+        def get_board_adj_horizontal(board_repr, row, col):
+            
+            return (get_board_number(board_repr, row + 1, col), get_board_number(board_repr, row - 1, col))
+
+        def get_board_adj_vertical(board_repr, row, col):
+            
+            return (get_board_number(board_repr, row, col - 1), get_board_number(board_repr, row, col + 1))
+
         
         size = None
         board_representation = []
@@ -164,6 +179,38 @@ class Board:
                 i = (i + 1) % size      
 
                 board_representation.append(board_line)
+        
+        
+        limit = Board.size
+
+
+        for row in range(limit):
+            for col in range(limit):
+                
+                if get_board_number(board_representation, row, col) == 0:
+                    horizontal_adjacencies = get_board_adj_horizontal(board_representation, row, col)
+                    vertical_adjacencies = get_board_adj_vertical(board_representation, row, col)
+
+                    if horizontal_adjacencies[0] != None and horizontal_adjacencies[1] != None and horizontal_adjacencies[0] != 0 and horizontal_adjacencies[1] != 0:
+                        if  (horizontal_adjacencies[0] == horizontal_adjacencies[1] + 2):   
+                            board_representation[row][col] = horizontal_adjacencies[0] - 1
+                            number_sequences.append([(row, col)])
+                            number_of_blank_positions -= 1
+                        
+                        elif (horizontal_adjacencies[0] == horizontal_adjacencies[1] - 2):
+                            board_representation[row][col] = horizontal_adjacencies[0] + 1
+                            number_sequences.append([(row, col)])
+                            number_of_blank_positions -= 1
+                        
+                    if vertical_adjacencies[0] != None and vertical_adjacencies[1] != None and vertical_adjacencies[0] != 0 and vertical_adjacencies[1] != 0:
+                        if (vertical_adjacencies[0] == vertical_adjacencies[1] + 2):
+                            board_representation[row][col] = vertical_adjacencies[0] - 1
+                            number_sequences.append([(row, col)])
+                            number_of_blank_positions -= 1
+                        elif (vertical_adjacencies[0] == vertical_adjacencies[1] - 2):
+                            board_representation[row][col] = vertical_adjacencies[0] + 1
+                            number_sequences.append([(row, col)])
+                            number_of_blank_positions -= 1
 
         # fill number sequences
         board = Board(board_representation, number_sequences, None, None, None, None, 1, number_of_blank_positions)
