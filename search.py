@@ -1557,7 +1557,7 @@ class InstrumentedProblem(Problem):
         return getattr(self.problem, attr)
 
     def __repr__(self):
-        return f"<caminhos expandidos : {self.succs}\tgoal test : {self.goal_tests}\tnós gerados : {self.states}>"
+        return f"<caminhos expandidos : {self.succs}\tnós gerados : {self.states}>"
 
 
 
@@ -1574,6 +1574,7 @@ def compare_searchers(problems, header,
         searcher(p)
         end = time.time()
         search_time = end - start
+        print(f"completed {name(searcher)}")
         return (p, f"time : {search_time}")
 
     table = [[name(s)] + [do(s, p) for p in problems] for s in searchers]

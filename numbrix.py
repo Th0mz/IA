@@ -6,6 +6,7 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
+from inspect import stack
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 from search import InstrumentedProblem, compare_searchers
@@ -498,18 +499,10 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    compare_searchers(problems=[problem],
-                      header=['Searcher', input_file],
-                      searchers=[astar_search, 
-                      breadth_first_tree_search, 
-                      depth_first_tree_search, 
-                      greedy_search, 
-                      recursive_best_first_search]
-                    )
-
-    
+    goal_node = recursive_best_first_search(problem)
 
     # Imprimir para o standard output no formato indicado.
+    print(goal_node.state.board, end="")
 
 if __name__ == "__main__":
     main()
