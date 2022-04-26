@@ -211,20 +211,7 @@ def depth_first_tree_search(problem, debug=False):
         number_of_nodes_generated += 1
         node = frontier.pop()
 
-        if (debug == True):
-            print("===========")
-            print(node.action)
-            print(node.state.get_board())
-            for action in problem.actions(node.state):
-                print("  > ", action)
-
-            print(node.state.board.number_sequences)
-            print(node.state.board.next_sequence_value)
-            print(node.state.board.next_sequence_index)
-
         if problem.goal_test(node.state):
-            print("the number of nodes generated was : ", number_of_nodes_generated)
-            print ("and there are still ", len(frontier), " in the frontier")
             return node
         frontier.extend(node.expand(problem))
     return None
@@ -290,6 +277,8 @@ def best_first_graph_search(problem, f, display=False):
     
     while frontier:
         node = frontier.pop()
+        #print("=========")
+        #print(node.state.get_board())
         if problem.goal_test(node.state):
             if display:
                 print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier")
@@ -1568,8 +1557,8 @@ class InstrumentedProblem(Problem):
         return getattr(self.problem, attr)
 
     def __repr__(self):
-        return '<{:4d}/{:4d}/{:4d}/{}>'.format(self.succs, self.goal_tests,
-                                               self.states, str(self.found)[:4])
+        return f"<caminhos expandidos : {self.succs}\tgoal test : {self.goal_tests}\tnós gerados : {self.states}>"
+
 
 
 def compare_searchers(problems, header,

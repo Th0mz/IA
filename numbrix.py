@@ -8,7 +8,7 @@
 
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
-
+from search import InstrumentedProblem, compare_searchers
 ROW = 0
 COL = 1
 VALUE = 2
@@ -455,6 +455,16 @@ class Numbrix(Problem):
 
         state = node.parent.state
         board = state.get_board()
+        row, col, value = action
+
+        # its the only possible position
+        adj_number1, adj_number2 = board.adjacent_horizontal_numbers(row, col)
+        if ((adj_number1 and adj_number2) and (abs(adj_number1 - adj_number2) == 2)):
+            return -INFINITY
+        
+        adj_number1, adj_number2 = board.adjacent_vertical_numbers(row, col)
+        if ((adj_number1 and adj_number2) and (abs(adj_number1 - adj_number2) == 2)):
+            return -INFINITY
 
         next_position, next_value = board.get_next_sequence_info()
         direction = board.get_direction()
@@ -468,7 +478,6 @@ class Numbrix(Problem):
         if (next_position != None):     
             next_row, next_col = next_position
         
-        row, col, value = action
         radius = abs(next_value - value)
 
         if not ((next_position == None) or (abs(next_row - row) + abs(next_col - col) <= radius)):
@@ -478,8 +487,8 @@ class Numbrix(Problem):
             return INFINITY
 
         new_board = node.state.get_board()
-        return new_board.get_number_of_blank_positions()        
-
+        blank_adjencies_normalized = len(new_board.get_blank_adjacencies(row, col)) / 4
+        return new_board.get_number_of_blank_positions() + blank_adjencies_normalized
 
 def main():
     input_file = sys.argv[1]
@@ -489,10 +498,18 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = greedy_search(problem, display=True)
+    compare_searchers(problems=[problem],
+                      header=['Searcher', input_file],
+                      searchers=[astar_search, 
+                      breadth_first_tree_search, 
+                      depth_first_tree_search, 
+                      greedy_search, 
+                      recursive_best_first_search]
+                    )
+
+    
 
     # Imprimir para o standard output no formato indicado.
-    print(goal_node.state.board, end="")
 
 if __name__ == "__main__":
     main()
