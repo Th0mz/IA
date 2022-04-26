@@ -12,6 +12,7 @@ from search import Problem, Node, astar_search, breadth_first_tree_search, depth
 ROW = 0
 COL = 1
 VALUE = 2
+INFINITY = 9999999
 
 def copyBoardLine(board, row):
     new_board = []
@@ -414,43 +415,13 @@ class Numbrix(Problem):
         
         board = state.get_board()
         lowest_position, lowest_value = board.get_lowest_sequence_info()
-        next_position, next_value = board.get_next_sequence_info()
         direction = board.get_direction()
-
-
-        # TODO : alterar de forma a que seja dinamico com a mudança de direção
-        if (direction == 1 and board.get_lowest_sequence_value() >= board.get_next_sequence_value() - 1):
-            return []
-        
-        if (direction == -1 and board.get_lowest_sequence_value() <= board.get_next_sequence_value() + 1):
-            return []
 
         lowest_row, lowest_col = lowest_position
         adjacencies = state.get_board().get_blank_adjacencies(lowest_row, lowest_col)
-
-        if (next_position != None):
-            next_row, next_col = next_position
         
-        radius = abs(next_value - (lowest_value + direction))
-
         for adjency in adjacencies:
-            adj_row, adj_col = adjency
-            
-            if (next_position == None) or (abs(next_row - adj_row) + abs(next_col - adj_col) <= radius):
-                actions.append((adj_row, adj_col, lowest_value + direction))
-
-        if (len(actions) == 1 or next_position == None):
-            return actions
-        
-        # if there is more than one possible action check if all of the actions
-        # can reach the next_sequence by a blank path
-        for i in range(len(actions) - 1, -1, -1):    
-            row, col, _ = actions[i]
-            position = (row, col)
-            
-            has_path_between = self.path_between(board, position, next_position, radius)
-            if (not has_path_between):
-                actions.pop(i)
+            actions.append(adjency + (lowest_value + direction, ))
 
         return actions
 
@@ -478,8 +449,36 @@ class Numbrix(Problem):
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         
-        # TODO : dont just consider the biggest sequence but all sequences
-        pass        
+        action = node.action
+        if (action == None):
+            return INFINITY
+
+        state = node.parent.state
+        board = state.get_board()
+
+        next_position, next_value = board.get_next_sequence_info()
+        direction = board.get_direction()
+
+        if (direction == 1 and board.get_lowest_sequence_value() >= board.get_next_sequence_value() - 1):
+            return INFINITY
+
+        if (direction == -1 and board.get_lowest_sequence_value() <= board.get_next_sequence_value() + 1):
+            return INFINITY
+
+        if (next_position != None):     
+            next_row, next_col = next_position
+        
+        row, col, value = action
+        radius = abs(next_value - value)
+
+        if not ((next_position == None) or (abs(next_row - row) + abs(next_col - col) <= radius)):
+            return INFINITY
+
+        if not ((next_position == None) or self.path_between(board, (row, col), next_position, radius)):
+            return INFINITY
+
+        new_board = node.state.get_board()
+        return new_board.get_number_of_blank_positions()        
 
 
 def main():
@@ -490,7 +489,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem)
+    goal_node = greedy_search(problem, display=True)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
