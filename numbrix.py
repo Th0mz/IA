@@ -6,12 +6,14 @@
 # 95599 Joao Ramalho
 # 95680 Tomas Tavares
 
+from json.encoder import INFINITY
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
 ROW = 0
 COL = 1
 VALUE = 2
+INFINITY = 999999
 
 def copyBoardLine(board, row):
     new_board = []
@@ -479,7 +481,23 @@ class Numbrix(Problem):
         """ Função heuristica utilizada para a procura A*. """
 
         board = node.state.get_board()
-        return board.get_number_of_blank_positions() 
+        action = node.action
+        if (action == None):
+            return INFINITY
+
+        row, col, _ = action
+        # its the only possible position    
+        adj_number1, adj_number2 = board.adjacent_horizontal_numbers(row, col)
+        if ((adj_number1 and adj_number2) and (abs(adj_number1 - adj_number2) == 2)):
+            return -INFINITY
+        
+        adj_number1, adj_number2 = board.adjacent_vertical_numbers(row, col)
+        if ((adj_number1 and adj_number2) and (abs(adj_number1 - adj_number2) == 2)):
+            return -INFINITY
+
+
+        blank_adjencies_normalized = len(board.get_blank_adjacencies(row, col)) / 4
+        return board.get_number_of_blank_positions() + blank_adjencies_normalized
 
 
 def main():
