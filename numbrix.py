@@ -172,6 +172,15 @@ class Board:
         board.calculate_paths()
 
         return board
+
+    def sortSequences (self) : 
+        def sortFunction(sequence):
+            row, col = sequence[0]
+            return self.get_number(row, col)
+
+
+        self.number_sequences.sort(key=sortFunction)    
+
     
     def get_board(self):
         return self.board
@@ -269,53 +278,84 @@ class Board:
         # check if it can join to the next sequence
         if self.next_sequence_index != None and self.is_adjency(next, (row, col)) and self.is_successor(next, (row, col)):
             self.merge_sequences(next_index, self.lowest_sequence_index, next_position, lowest_position)
-            self.lowest_sequence_index = len(self.number_sequences) - 1
-            
-            new_row, new_col = self.number_sequences[self.lowest_sequence_index][lowest_position]
-            self.lowest_sequence_value = self.get_number(new_row, new_col)
-
-            self.update_next_sequence()
+            self.update_sequences()
 
         # change direction if the biggest value in the lowest
         # sequence is the biggest value that we can put on the board
         if (self.direction == 1 and self.lowest_sequence_value == Board.num_cells):
             self.direction = -1
-            row, col = self.number_sequences[self.lowest_sequence_index][0]
-            self.lowest_sequence_value = self.get_number(row, col)
-            self.update_next_sequence()
+            self.update_sequences()
 
 
-    def update_next_sequence(self):
-        
-        # TODO : fazer update_next_sequence abstrato => não importa a direção
-        # esta implementação assume que estamos a andar para a frente
+    def update_sequences(self):
+        self.sortSequences()
 
-        next_value = -1
-        if (self.direction == 1):
-            next_value = Board.num_cells + 1
+        smallest_distance = Board.num_cells + 1
 
         next_index = None
-        for i in range(len(self.number_sequences)):
-            if (i != self.lowest_sequence_index):
-                row, col = self.number_sequences[i][0]
-                value = self.get_number(row, col)
-                # TODO : isto da para fazer em apenas 1 if 
-                if (self.direction == 1 and value < next_value):
-                    next_value = value
-                    next_index = i
-                elif (self.direction == -1 and value > next_value):
-                    next_value = value
-                    next_index = i
+        next_value = None
+        lowest_index = None
+        lowest_value = None
+        for i in range(len(self.number_sequences) - 1):
+            last_element = self.number_sequences[i][-1]
+            next_element = self.number_sequences[i + 1][0]
+            
+            next_row, next_col = next_element
+            last_row, last_col = last_element
 
+            _next_value = self.get_number(next_row, next_col)
+            last_value = self.get_number(last_row, last_col)
+
+            distance = abs(_next_value - last_value) 
+            if (distance < smallest_distance):
+                smallest_distance = distance
+                lowest_index = i
+                lowest_value = last_value
+                next_index = i + 1 
+                next_value = _next_value 
+
+        # there is only 1 sequence
         if (next_index == None):
-            # TODO : now im assuming that direction == 1
-            # => there is no next sequence
-            self.next_sequence_value = next_value
+            self.lowest_sequence_index = 0
+            self.next_sequence_value = -1
+
+            reference = 0
+            if self.direction == 1:
+                self.next_sequence_value = Board.num_cells + 1
+                reference = -1
+                
+            lowest_element = self.number_sequences[self.lowest_sequence_index][reference]
+            row, col = lowest_element
+            self.lowest_sequence_value = self.get_number(row, col)
+
             self.next_sequence_index = None
             return
+        
+        """
+        if (smallest_distance > 3):
+            self.next_sequence_index = 1
+            self.lowest_sequence_index = 0
+
+            lowest_reference = 0
+            next_reference = -1
+            if self.direction == 1:
+                lowest_reference = -1
+                next_reference = 0
+
+            lowest_element = self.number_sequences[self.lowest_sequence_index][lowest_reference]
+            lowest_row, lowest_col = lowest_element
+            self.lowest_sequence_value = self.get_number(lowest_row, lowest_col)
+
+            next_element = self.number_sequences[self.next_sequence_index][next_reference]
+            next_row, next_col = next_element
+            self.next_sequence_value = self.get_number(next_row, next_col)
+            return
+        """ 
 
         self.next_sequence_index = next_index
         self.next_sequence_value = next_value
+        self.lowest_sequence_index = lowest_index
+        self.lowest_sequence_value = lowest_value
 
     def merge_sequences(self, index_i, index_j, position_i, position_j):
         sequence_i = self.number_sequences[index_i]
@@ -367,17 +407,7 @@ class Board:
         while merge_sequence():
             pass
         
-        self.lowest_sequence_value = Board.num_cells + 1
-        self.lowest_sequence_index = None
-        for i in range(len(self.number_sequences)):
-            sequence = self.number_sequences[i]
-            row, col = sequence[-1]
-            value = self.get_number(row, col)
-            if self.lowest_sequence_value > value:
-                self.lowest_sequence_value = value
-                self.lowest_sequence_index = i
-
-        self.update_next_sequence()
+        self.update_sequences()
 
 
 
