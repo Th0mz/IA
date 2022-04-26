@@ -9,7 +9,7 @@
 from json.encoder import INFINITY
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
-
+from search import compare_searchers
 ROW = 0
 COL = 1
 VALUE = 2
@@ -507,11 +507,16 @@ def main():
     # Usar uma técnica de procura para resolver a instância,
     problem = Numbrix(board)
 
-    # Retirar a solução a partir do nó resultante,
-    goal_node = greedy_search(problem, display=True)
 
-    # Imprimir para o standard output no formato indicado.
-    print(goal_node.state.board, end="")
+    compare_searchers(problems=[problem],
+                      header=['Searcher', input_file],
+                      searchers=[
+                          astar_search,
+                          breadth_first_tree_search, 
+                          depth_first_tree_search, 
+                          greedy_search, 
+                          recursive_best_first_search
+                      ])
 
 if __name__ == "__main__":
     main()
