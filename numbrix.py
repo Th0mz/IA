@@ -477,9 +477,9 @@ class Numbrix(Problem):
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
-        
-        # TODO : dont just consider the biggest sequence but all sequences
-        pass        
+
+        board = node.state.get_board()
+        return board.get_number_of_blank_positions() 
 
 
 def main():
@@ -490,7 +490,7 @@ def main():
     problem = Numbrix(board)
 
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem)
+    goal_node = greedy_search(problem, display=True)
 
     # Imprimir para o standard output no formato indicado.
     print(goal_node.state.board, end="")
