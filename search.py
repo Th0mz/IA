@@ -6,9 +6,9 @@ then create problem instances and solve them with calls to the various search
 functions.
 """
 
-from doctest import FAIL_FAST
 import sys
 from collections import deque
+import time
 
 from utils import *
 
@@ -1570,8 +1570,11 @@ def compare_searchers(problems, header,
                                  recursive_best_first_search]):
     def do(searcher, problem):
         p = InstrumentedProblem(problem)
+        start = time.time()
         searcher(p)
-        return p
+        end = time.time()
+        search_time = end - start
+        return (p, f"time : {search_time}")
 
     table = [[name(s)] + [do(s, p) for p in problems] for s in searchers]
     print_table(table, header)
